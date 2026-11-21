@@ -9,6 +9,7 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.tags.TagKey;
+import java.util.function.Predicate;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -109,5 +110,16 @@ public abstract class PlayerInventoryMixin {
     private boolean searchAddon(boolean original, TagKey<Item> tag) {
         return original
             || Boolean.TRUE.equals(MixinHelpers.withInventoryAddonReturning(player, addon -> addon.contains(tag)));
+    }
+
+    /**
+     * 26.3: vanilla now also searches the inventory with a predicate (e.g.
+     * {@code MapItemSavedData} to keep the player marker of held maps), so the
+     * addon is searched there as well, like the other {@code contains} overloads.
+     */
+    @ModifyReturnValue(method = "contains(Ljava/util/function/Predicate;)Z", at = @At("RETURN"))
+    private boolean searchAddon(boolean original, Predicate<ItemStack> predicate) {
+        return original
+            || Boolean.TRUE.equals(MixinHelpers.withInventoryAddonReturning(player, addon -> addon.contains(predicate)));
     }
 }

@@ -14,6 +14,7 @@ import net.minecraft.world.SimpleContainer
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.tags.TagKey
+import java.util.function.Predicate
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.core.NonNullList
 
@@ -192,6 +193,8 @@ abstract class PlayerInventoryExtension protected constructor(val player: Player
     fun contains(stack: ItemStack): Boolean = stacks.any { areItemsSimilar(it, stack) }
 
     fun contains(tag: TagKey<Item>): Boolean = stacks.any { it.isNotEmpty && it.`is`(tag) }
+
+    fun contains(predicate: Predicate<ItemStack>): Boolean = stacks.any { it.isNotEmpty && predicate.test(it) }
 
     fun findFittingToolBeltStack(sampleStack: ItemStack): ItemStack {
         val index = findFittingToolBeltIndex(sampleStack)

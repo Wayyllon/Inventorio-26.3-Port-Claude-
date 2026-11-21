@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "inventorio-gametest",
+  "version": "1.0.0",
+  "name": "Inventorio Game Tests",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-gametest": [
+      {
+        "value": "de.rubixdev.inventorio.gametest.InventorioGameTests",
+        "adapter": "kotlin"
+      }
+    ]
+  },
+  "depends": {
+    "inventorio": "*",
+    "fabric-gametest-api-v1": "*"
+  }
+}

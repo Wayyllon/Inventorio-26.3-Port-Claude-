@@ -36,6 +36,17 @@ loom {
     }
 }
 
+// Server game tests (src/gametest, not part of the release jar): ./gradlew runGameTest
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = "inventorio-gametest"
+        enableGameTests = true
+        enableClientGameTests = false
+        eula = true
+    }
+}
+
 dependencies {
     // Minecraft 26.x is unobfuscated: no mappings needed
     minecraft("com.mojang:minecraft:${prop("minecraft_version")}")
