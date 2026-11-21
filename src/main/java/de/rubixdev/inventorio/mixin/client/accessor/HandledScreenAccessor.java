@@ -5,6 +5,7 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 @SuppressWarnings("unused")
@@ -14,8 +15,16 @@ public interface HandledScreenAccessor<T extends AbstractContainerMenu>extends S
     @Accessor("imageWidth")
     int getBackgroundWidth();
 
+    @Accessor("imageWidth")
+    @Mutable
+    void setBackgroundWidth(int width);
+
     @Accessor("imageHeight")
     int getBackgroundHeight();
+
+    @Accessor("imageHeight")
+    @Mutable
+    void setBackgroundHeight(int height);
 
     @Accessor("leftPos")
     int getX();

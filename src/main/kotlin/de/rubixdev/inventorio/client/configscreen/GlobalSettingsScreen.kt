@@ -23,7 +23,7 @@ object GlobalSettingsScreen {
 
         category.addEntry(entryBuilder.startTextDescription(Component.translatable("inventorio.settings.global.description")).build())
 
-        val isNotLocal = Minecraft.getInstance().connection?.connection?.isLocal != true
+        val isNotLocal = Minecraft.getInstance().connection?.connection?.isMemoryConnection != true
         if (isNotLocal) {
             category.addEntry(entryBuilder.startTextDescription(Component.translatable("inventorio.settings.global.disabled_by_server")).build())
         }

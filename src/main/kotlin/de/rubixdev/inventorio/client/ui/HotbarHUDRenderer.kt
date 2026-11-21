@@ -1,6 +1,5 @@
 package de.rubixdev.inventorio.client.ui
 
-import com.mojang.blaze3d.systems.RenderSystem
 import de.rubixdev.inventorio.config.PlayerSettings
 import de.rubixdev.inventorio.player.PlayerInventoryAddon
 import de.rubixdev.inventorio.util.*
@@ -8,17 +7,12 @@ import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
-import com.mojang.blaze3d.platform.Lighting
-import net.minecraft.client.renderer.texture.OverlayTexture
-import net.minecraft.world.item.ItemDisplayContext
+import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.entity.HumanoidArm
-import net.minecraft.ReportedException
-import net.minecraft.CrashReport
 import net.minecraft.util.Mth
 import net.minecraft.world.level.GameType
-import org.joml.Matrix4f
 
 @Environment(EnvType.CLIENT)
 object HotbarHUDRenderer {
@@ -36,8 +30,8 @@ object HotbarHUDRenderer {
 
         val playerEntity = client.cameraEntity as? Player ?: return false
         val inventory = playerEntity.inventory
-        val scaledWidthHalved = client.window.scaledWidth / 2 - 30
-        val scaledHeight = client.window.scaledHeight
+        val scaledWidthHalved = drawContext.guiWidth() / 2 - 30
+        val scaledHeight = drawContext.guiHeight()
         val selectedSection = PlayerInventoryAddon.Client.selectedHotbarSection
 
         val texture = if (PlayerSettings.darkTheme.boolValue) {
@@ -48,6 +42,7 @@ object HotbarHUDRenderer {
 
         // Draw the hotbar itself
         drawContext.blit(
+            RenderPipelines.GUI_TEXTURED,
             texture,
             scaledWidthHalved - HUD_SEGMENTED_HOTBAR.x,
             scaledHeight - HUD_SEGMENTED_HOTBAR.y,
@@ -61,6 +56,7 @@ object HotbarHUDRenderer {
         if (selectedSection == -1) {
             // Draw the regular vanilla selection box
             drawContext.blit(
+                RenderPipelines.GUI_TEXTURED,
                 texture,
                 scaledWidthHalved - HUD_SECTION_SELECTION.x - HUD_SEGMENTED_HOTBAR_GAP +
                     (inventory.selectedSlot * SLOT_HOTBAR_SIZE.width) + (HUD_SEGMENTED_HOTBAR_GAP * (inventory.selectedSlot / 3)),
@@ -74,6 +70,7 @@ object HotbarHUDRenderer {
         } else {
             // Draw the section-wide selection box
             drawContext.blit(
+                RenderPipelines.GUI_TEXTURED,
                 texture,
                 scaledWidthHalved - HUD_SECTION_SELECTION.x + (HUD_SECTION_SELECTION.width * selectedSection) - HUD_SEGMENTED_HOTBAR_GAP,
                 scaledHeight - HUD_SECTION_SELECTION.y,
@@ -91,16 +88,16 @@ object HotbarHUDRenderer {
             val y = scaledHeight - SLOT_HOTBAR_SIZE.height
             val itemStack = inventory.getItem(slotNum)
 
-            drawContext.renderItem(itemStack, x, y)
-            drawContext.renderItemDecorations(client.font, itemStack, x, y)
+            drawContext.item(itemStack, x, y)
+            drawContext.itemDecorations(client.font, itemStack, x, y)
         }
         return true
     }
 
     private fun isHidden(): Boolean {
         if (client.gameMode == null
-            || client.gameMode?.currentGameMode == GameType.SPECTATOR
-            || client.options.hudHidden
+            || client.gameMode?.playerMode == GameType.SPECTATOR
+            || client.gui.hud.isHidden
         ) {
             return true
         }
@@ -120,8 +117,8 @@ object HotbarHUDRenderer {
         val utilBeltDisplay = inventoryAddon.getDisplayedUtilities()
         val selectedHotbarItem = inventoryAddon.getSelectedHotbarStack()
 
-        val scaledWidthHalved = client.window.scaledWidth / 2 - 30
-        val scaledHeight = client.window.scaledHeight
+        val scaledWidthHalved = drawContext.guiWidth() / 2 - 30
+        val scaledHeight = drawContext.guiHeight()
 
         val drawSegmentedHotbar = PlayerSettings.segmentedHotbar.value == SegmentedHotbar.ONLY_VISUAL
             || PlayerSettings.segmentedHotbar.value == SegmentedHotbar.ON
@@ -135,7 +132,7 @@ object HotbarHUDRenderer {
         val leftHandedUtilityBeltOffset = if (rightHanded) 0 else (LEFT_HANDED_UTILITY_BELT_OFFSET + segmentedModeOffset * 2)
         val leftHandedDisplayToolOffset = if (rightHanded) 0 else (LEFT_HANDED_DISPLAY_TOOL_OFFSET - segmentedModeOffset * 2)
 
-        var texture = if (PlayerSettings.darkTheme.boolValue) {
+        val texture = if (PlayerSettings.darkTheme.boolValue) {
             WIDGETS_TEXTURE_DARK
         } else {
             WIDGETS_TEXTURE
@@ -143,10 +140,9 @@ object HotbarHUDRenderer {
 
         // Draw the frame of a tool currently in use (one on the opposite side from the offhand)
 
-        RenderSystem.disableDepthTest()
-        RenderSystem.enableBlend()
         if (inventoryAddon.displayTool.isNotEmpty && inventoryAddon.displayTool != selectedHotbarItem) {
             drawContext.blit(
+                RenderPipelines.GUI_TEXTURED,
                 texture,
                 scaledWidthHalved + leftHandedDisplayToolOffset + HUD_ACTIVE_TOOL_FRAME.x + segmentedModeOffset,
                 scaledHeight - HUD_ACTIVE_TOOL_FRAME.y,
@@ -163,6 +159,7 @@ object HotbarHUDRenderer {
             // Draw the semi-transparent background (needed to paint next and prev utility belt items dimmed,
             //   while keeping the resulting slot opacity akin to other hotbar slots)
             drawContext.blit(
+                RenderPipelines.GUI_TEXTURED,
                 texture,
                 scaledWidthHalved + leftHandedUtilityBeltOffset - HUD_UTILITY_BELT.x - segmentedModeOffset,
                 scaledHeight - HUD_UTILITY_BELT.y,
@@ -188,18 +185,9 @@ object HotbarHUDRenderer {
                 Mth.ceil((scaledHeight - SLOT_UTILITY_BELT_2.y) / 0.8),
             )
 
-            // Reverse the scaling. Also, rendering an item disables the blending for some reason and changes the binded texture
-            RenderSystem.applyModelViewMatrix()
-            RenderSystem.disableDepthTest()
-            RenderSystem.enableBlend()
-            texture = if (PlayerSettings.darkTheme.boolValue) {
-                WIDGETS_TEXTURE_DARK
-            } else {
-                WIDGETS_TEXTURE
-            }
-
             // Draw the utility belt frame
             drawContext.blit(
+                RenderPipelines.GUI_TEXTURED,
                 texture,
                 scaledWidthHalved + leftHandedUtilityBeltOffset - HUD_UTILITY_BELT.x - segmentedModeOffset,
                 scaledHeight - HUD_UTILITY_BELT.y,
@@ -228,21 +216,20 @@ object HotbarHUDRenderer {
                 scaledHeight - SLOT_ACTIVE_TOOL_FRAME.y,
             )
         }
-        RenderSystem.enableBlend()
     }
 
     private fun renderItem(drawContext: GuiGraphicsExtractor, stack: ItemStack, x: Int, y: Int) {
         if (stack.isNotEmpty) {
-            drawContext.renderItem(stack, x, y)
-            drawContext.renderItemDecorations(client.font, stack, x, y)
+            drawContext.item(stack, x, y)
+            drawContext.itemDecorations(client.font, stack, x, y)
         }
     }
 
     fun renderFunctionOnlySelector(drawContext: GuiGraphicsExtractor) {
         val selectedSection = PlayerInventoryAddon.Client.selectedHotbarSection
         if (selectedSection != -1 && PlayerSettings.segmentedHotbar.value == SegmentedHotbar.ONLY_FUNCTION) {
-            val scaledWidthHalved = client.window.scaledWidth / 2 - 30
-            val scaledHeight = client.window.scaledHeight
+            val scaledWidthHalved = drawContext.guiWidth() / 2 - 30
+            val scaledHeight = drawContext.guiHeight()
 
             val texture = if (PlayerSettings.darkTheme.boolValue) {
                 WIDGETS_TEXTURE_DARK
@@ -250,6 +237,7 @@ object HotbarHUDRenderer {
                 WIDGETS_TEXTURE
             }
             drawContext.blit(
+                RenderPipelines.GUI_TEXTURED,
                 texture,
                 scaledWidthHalved - HUD_SECTION_SELECTION.x + ((HUD_SECTION_SELECTION.width - HUD_SEGMENTED_HOTBAR_GAP) * selectedSection),
                 scaledHeight - HUD_SECTION_SELECTION.y,
@@ -264,31 +252,11 @@ object HotbarHUDRenderer {
 
     private fun drawSmallItem(drawContext: GuiGraphicsExtractor, stack: ItemStack, x: Int, y: Int) {
         if (!stack.isEmpty) {
-            val bakedModel = client.itemRenderer.getModel(stack, null, null, 0)
-            drawContext.pose().push()
-            drawContext.pose().scale(0.8f, 0.8f, 0.8f)
-            drawContext.pose().translate((x + 8).toFloat(), (y + 8).toFloat(), 150f)
-            try {
-                drawContext.pose().mulPose(Matrix4f().scaling(1.0f, -1.0f, 1.0f))
-                drawContext.pose().scale(16.0f, 16.0f, 16.0f)
-                val bl = !bakedModel.isSideLit
-                if (bl) {
-                    Lighting.setupForFlatItems()
-                }
-                client.itemRenderer.renderItem(stack, ItemDisplayContext.GUI, false, drawContext.pose(), drawContext.bufferSource(), 15728880, OverlayTexture.NO_OVERLAY, bakedModel)
-                drawContext.drawManaged()
-                if (bl) {
-                    Lighting.setupFor3DItems()
-                }
-            } catch (var12: Throwable) {
-                val crashReport = CrashReport.forThrowable(var12, "Rendering item")
-                val crashReportSection = crashReport.addCategory("Item being rendered")
-                crashReportSection.add("Item Type") { stack.item.toString() }
-                crashReportSection.add("Item Components") { stack.components.toString() }
-                crashReportSection.add("Item Foil") { stack.hasFoil().toString() }
-                throw ReportedException(crashReport)
-            }
-            drawContext.pose().pop()
+            // Draw the item at 80% scale (coordinates are given in the scaled space)
+            drawContext.pose().pushMatrix()
+            drawContext.pose().scale(0.8f, 0.8f)
+            drawContext.item(stack, x, y)
+            drawContext.pose().popMatrix()
         }
     }
 }
