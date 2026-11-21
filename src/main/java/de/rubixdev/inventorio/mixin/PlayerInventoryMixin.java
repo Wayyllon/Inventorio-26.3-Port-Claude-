@@ -79,7 +79,7 @@ public abstract class PlayerInventoryMixin {
             );
     }
 
-    @Inject(method = "removeItem", at = @At(value = "HEAD"), cancellable = true)
+    @Inject(method = "removeItem(Lnet/minecraft/world/item/ItemStack;)V", at = @At(value = "HEAD"), cancellable = true)
     private void inventorioRemoveOneFromAddon(ItemStack stack, CallbackInfo ci) {
         MixinHelpers.withInventoryAddon(player, inventorioAddon -> {
             if (inventorioAddon != null && inventorioAddon.removeOne(stack)) ci.cancel();
