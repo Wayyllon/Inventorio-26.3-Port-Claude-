@@ -1,0 +1,39 @@
+{
+  "required": true,
+  "package": "de.rubixdev.inventorio.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "minVersion": "0.8",
+  "plugin": "de.rubixdev.inventorio.InventorioMixinPlugin",
+  "mixins": [
+    "ExperienceOrbEntityMixin",
+    "PlayerEntityMixin",
+    "PlayerInventoryMixin",
+    "PlayerManagerMixin",
+    "ServerPlayerEntity_ScreenHandlerSyncHandlerMixin",
+    "ServerPlayNetworkHandlerMixin",
+    "accessor.CraftingScreenHandlerAccessor",
+    "accessor.ScreenHandlerAccessor",
+    "accessor.SimpleInventoryAccessor",
+    "accessor.SlotAccessor",
+    "optional.bowfix.PlayerEntityMixin",
+    "optional.enderchest.EnderChestBlockMixin",
+    "optional.enderchest.PlayerEntityMixin",
+    "optional.totem.LivingEntityMixin"
+  ],
+  "client": [
+    "client.ClientPlayerInteractionManagerMixin",
+    "client.ClientPlayNetworkHandlerMixin",
+    "client.HandledScreenMixin",
+    "client.InGameHudMixinHP",
+    "client.InGameHudMixinLP",
+    "client.InventoryScreenMixin",
+    "client.MinecraftClientMixin",
+    "client.RecipeBookWidgetMixin",
+    "client.accessor.HandledScreenAccessor",
+    "client.accessor.MinecraftClientAccessor",
+    "client.accessor.ScreenAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

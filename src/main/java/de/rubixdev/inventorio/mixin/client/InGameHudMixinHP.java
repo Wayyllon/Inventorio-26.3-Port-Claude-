@@ -1,0 +1,48 @@
+package de.rubixdev.inventorio.mixin.client;
+
+import de.rubixdev.inventorio.client.ui.HotbarHUDRenderer;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import net.minecraft.client.DeltaTracker;
+
+@Mixin(value = Gui.class, priority = 1500)
+@Environment(EnvType.CLIENT)
+public class InGameHudMixinHP {
+    /**
+     * This mixin calls the renderer of hotbar addons. Note: this mixin doesn't
+     * work in NeoForge and is substituted with a NeoForge event.
+     */
+    @Inject(method = "render", at = @At(value = "RETURN"))
+    private void inventorioRenderHotbarAddons(/* #if <- hack around formatter */
+        GuiGraphicsExtractor context,
+        DeltaTracker tickCounter,
+        CallbackInfo ci
+    ) {
+        HotbarHUDRenderer.INSTANCE.renderHotbarAddons(context);
+    }
+
+    /**
+     * This mixin removes the vanilla offhand display (both the item frame and
+     * the item)
+     */
+    @Redirect(
+        method = "renderItemHotbar",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/entity/player/Player;getOffhandItem()Lnet/minecraft/world/item/ItemStack;"
+        )
+    )
+    private ItemStack inventorioRemoveOffhandDisplayFromHotbar(Player playerEntity) {
+        return ItemStack.EMPTY;
+    }
+}
