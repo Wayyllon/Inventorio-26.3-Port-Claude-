@@ -30,7 +30,7 @@ object GlobalSettingsSyncPrompt {
                 continue
             }
             val crossedValueText = Component.translatable(option.value.toString())
-            crossedValueText.style = Style.EMPTY.withFormatting(ChatFormatting.STRIKETHROUGH)
+            crossedValueText.style = Style.EMPTY.applyFormat(ChatFormatting.STRIKETHROUGH)
             appended.append(option.displayText).append(": ").append(crossedValueText).append(" -> $newValue\n")
         }
         category.addEntry(entryBuilder.startTextDescription(Component.translatable("inventorio.settings.global.sync_restart_prompt", appended)).build())
@@ -50,9 +50,9 @@ object GlobalSettingsSyncPrompt {
                         GlobalSettings.save()
                     }
                     if (it == ExitMode.SYNC_AND_EXIT) {
-                        Minecraft.getInstance().destroy()
+                        Minecraft.getInstance().stop()
                     } else {
-                        Minecraft.getInstance().setScreen(null)
+                        Minecraft.getInstance().gui.setScreen(null)
                     }
                 }
                 .build(),
@@ -65,7 +65,7 @@ object GlobalSettingsSyncPrompt {
     private fun getLoopbackScreen(newSettingsJson: JsonObject): Screen {
         val builder = ConfigBuilder.create()
             .setParentScreen(null)
-            .setAfterInitConsumer { Minecraft.getInstance().setScreen(if (!exitFlag) get(newSettingsJson) else null) }
+            .setAfterInitConsumer { Minecraft.getInstance().gui.setScreen(if (!exitFlag) get(newSettingsJson) else null) }
             .setTitle(Component.translatable("inventorio.settings.global.title"))
         builder.getOrCreateCategory(Component.translatable("inventorio.settings.global.title"))
         return builder.build()

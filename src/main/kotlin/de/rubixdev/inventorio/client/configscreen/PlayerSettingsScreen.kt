@@ -44,7 +44,7 @@ object PlayerSettingsScreen {
             category.addEntry(
                 entryBuilder
                     .startTextDescription(Component.translatable("inventorio.settings.player.swapped_hands.disabled"))
-                    .setTooltipForNextRenderPass(Component.translatable("inventorio.settings.player.swapped_hands.disabled.tooltip"))
+                    .setTooltip(Component.translatable("inventorio.settings.player.swapped_hands.disabled.tooltip"))
                     .build(),
             )
         }
@@ -87,7 +87,7 @@ object PlayerSettingsScreen {
             builder.requireRestart()
         }
         if (settingsEntry.tooltipText != null) {
-            builder.setTooltipForNextRenderPass(Component.translatable(settingsEntry.tooltipText))
+            builder.setTooltip(Component.translatable(settingsEntry.tooltipText))
         }
         category.addEntry(builder.build())
     }
@@ -128,7 +128,7 @@ object PlayerSettingsScreen {
             builder.requireRestart()
         }
         if (settingsEntry.tooltipText != null) {
-            builder.setTooltipForNextRenderPass(Component.translatable(settingsEntry.tooltipText))
+            builder.setTooltip(Component.translatable(settingsEntry.tooltipText))
         }
         category.addEntry(builder.build())
     }

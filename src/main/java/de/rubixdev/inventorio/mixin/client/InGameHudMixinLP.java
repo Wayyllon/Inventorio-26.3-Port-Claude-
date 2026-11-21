@@ -6,7 +6,7 @@ import de.rubixdev.inventorio.player.PlayerInventoryAddon;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.Hud;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,14 +16,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import net.minecraft.client.DeltaTracker;
 
-@Mixin(value = Gui.class, priority = 99)
+@Mixin(value = Hud.class, priority = 99)
 @Environment(EnvType.CLIENT)
 public class InGameHudMixinLP {
     /**
      * This mixin redirects rendering the hotbar itself in case Segmented Hotbar
      * is selected.
      */
-    @Inject(method = "renderItemHotbar", at = @At(value = "HEAD"), cancellable = true, require = 0)
+    @Inject(method = "extractItemHotbar", at = @At(value = "HEAD"), cancellable = true, require = 0)
     private void inventorioRenderSegmentedHotbar(/* #if <- hack around formatter */
         GuiGraphicsExtractor context,
         DeltaTracker tickCounter,
@@ -32,7 +32,7 @@ public class InGameHudMixinLP {
         if (HotbarHUDRenderer.INSTANCE.renderSegmentedHotbar(context)) ci.cancel();
     }
 
-    @Inject(method = "renderItemHotbar", at = @At(value = "RETURN"), require = 0)
+    @Inject(method = "extractItemHotbar", at = @At(value = "RETURN"), require = 0)
     private void inventorioRenderFunctionOnlySelector(/* #if <- hack around formatter */
         GuiGraphicsExtractor context,
         DeltaTracker tickCounter,
@@ -47,7 +47,7 @@ public class InGameHudMixinLP {
      * tool belt.
      */
     @ModifyExpressionValue(
-        method = "renderCrosshair",
+        method = "extractCrosshair",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/player/LocalPlayer;getCurrentItemAttackStrengthDelay()F"

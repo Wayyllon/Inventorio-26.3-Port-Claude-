@@ -27,7 +27,7 @@ public class HandledScreenMixin {
      * is an edge-case handler when you have "swap offhand" on mouse buttons)
      */
     @WrapOperation(
-        method = "checkHotbarMouseClicked(I)V",
+        method = "checkHotbarMouseClicked",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;slotClicked(Lnet/minecraft/world/inventory/Slot;IILnet/minecraft/world/inventory/ContainerInput;)V",
@@ -51,7 +51,7 @@ public class HandledScreenMixin {
         MixinHelpers.withScreenHandler(
             Minecraft.getInstance().player,
             screenHandler -> screenHandler.tryTransferToUtilityBeltSlot(hoveredSlot),
-            player -> original.call(instance, slot, slotId, button, actionType, original)
+            player -> original.call(instance, slot, slotId, button, actionType)
         );
     }
 
