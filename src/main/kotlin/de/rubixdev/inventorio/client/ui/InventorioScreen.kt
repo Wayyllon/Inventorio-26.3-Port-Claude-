@@ -29,6 +29,7 @@ import net.minecraft.client.gui.screens.recipebook.CraftingRecipeBookComponent
 import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.client.renderer.RenderPipelines
+import net.minecraft.client.sounds.SoundManager
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.player.Inventory
@@ -80,7 +81,21 @@ class InventorioScreen private constructor(
         // sets leftPos/topPos, inits the recipe book and adds the recipe book button
         // (positioned through [getRecipeBookButtonPosition])
         super.init()
-        recipeButton = children().firstOrNull { it is ImageButton } as ImageButton?
+        val vanillaRecipeButton = children().firstOrNull { it is ImageButton } as ImageButton?
+        recipeButton = vanillaRecipeButton?.let { old ->
+            // replace the vanilla recipe book button with an equivalent one that doesn't play the click sound
+            removeWidget(old)
+            val pos = getRecipeBookButtonPosition()
+            addRenderableWidget(
+                SilentImageButton(pos.x(), pos.y(), 20, 18, RecipeBookComponent.RECIPE_BUTTON_SPRITES) { button ->
+                    recipeBook.toggleVisibility()
+                    leftPos = recipeBook.updateScreenPosition(width, imageWidth)
+                    val newPos = getRecipeBookButtonPosition()
+                    button.setPosition(newPos.x(), newPos.y())
+                    onRecipeBookButtonClick()
+                },
+            )
+        }
         toggleButton = addToggleButton(this)
         lockedCraftButton = addLockedCraftButton(this)
         updateScreenPosition()
@@ -337,14 +352,14 @@ class InventorioScreen private constructor(
             val textures = if (screen is InventorioScreen) TOGGLE_BUTTON_ON_TEXTURES else TOGGLE_BUTTON_OFF_TEXTURES
             val texturesDark = if (screen is InventorioScreen) TOGGLE_BUTTON_ON_TEXTURES_DARK else TOGGLE_BUTTON_OFF_TEXTURES_DARK
             val screenAccessor = screen as HandledScreenAccessor<*>
-            val button = ImageButton(
+            val button = SilentImageButton(
                 screenAccessor.x + screenAccessor.backgroundWidth + GUI_TOGGLE_BUTTON_OFFSET.x,
                 screenAccessor.y + GUI_TOGGLE_BUTTON_OFFSET.y,
                 GUI_TOGGLE_BUTTON_OFFSET.width,
                 GUI_TOGGLE_BUTTON_OFFSET.height,
                 if (PlayerSettings.darkTheme.boolValue) texturesDark else textures,
             ) {
-                val client = Minecraft.getInstance() ?: return@ImageButton
+                val client = Minecraft.getInstance() ?: return@SilentImageButton
                 shouldOpenVanillaInventory = client.gui.screen() is InventorioScreen
                 isSwappingInvScreens = true
                 client.gui.screen()?.onClose()
@@ -367,14 +382,14 @@ class InventorioScreen private constructor(
                 return null
             }
             val screenAccessor = screen as HandledScreenAccessor<*>
-            val button = ImageButton(
+            val button = SilentImageButton(
                 screenAccessor.x + GUI_LOCKED_CRAFTING_POS.x,
                 screenAccessor.y + GUI_LOCKED_CRAFTING_POS.y,
                 GUI_LOCKED_CRAFTING_POS.width,
                 GUI_LOCKED_CRAFTING_POS.height,
                 if (PlayerSettings.darkTheme.boolValue) LOCK_BUTTON_TEXTURES_DARK else LOCK_BUTTON_TEXTURES,
             ) {
-                val client = Minecraft.getInstance() ?: return@ImageButton
+                val client = Minecraft.getInstance() ?: return@SilentImageButton
                 isSwappingInvScreens = true
                 client.gui.screen()?.onClose()
                 client.gui.setScreen(InventoryScreen(client.player!!))
@@ -386,4 +401,17 @@ class InventorioScreen private constructor(
             return button
         }
     }
+}
+
+/** An [ImageButton] that doesn't play the UI click sound when pressed. */
+@Environment(EnvType.CLIENT)
+class SilentImageButton(
+    x: Int,
+    y: Int,
+    width: Int,
+    height: Int,
+    sprites: WidgetSprites,
+    onPress: OnPress,
+) : ImageButton(x, y, width, height, sprites, onPress) {
+    override fun playDownSound(soundManager: SoundManager) {}
 }
