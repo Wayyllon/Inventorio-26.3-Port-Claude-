@@ -5,60 +5,64 @@ import net.fabricmc.api.Environment
 import net.minecraft.client.Minecraft
 import net.minecraft.client.KeyMapping
 import com.mojang.blaze3d.platform.InputConstants
+import de.rubixdev.inventorio.util.id
 
 @Environment(EnvType.CLIENT)
 object InventorioControls {
+    /** 26.3: key categories are registered objects; label key is `key.category.inventorio.inventorio` */
+    @JvmField val CATEGORY: KeyMapping.Category = KeyMapping.Category.register("inventorio".id)
+
     @JvmField val keyUseUtility = KeyCoBinding(
         "inventorio.keys.combined.with_use_item",
-        { Minecraft.getInstance()?.options?.useKey },
+        { Minecraft.getInstance()?.options?.keyUse },
         "inventorio.keys.use_utility",
-        InputConstants.Type.KEYSYM,
+        InputConstants.Type.KEYBOARD,
         InputConstants.UNKNOWN.value,
-        "inventorio.keys.category",
+        CATEGORY,
     )
 
     @JvmField val keyNextUtility = KeyMapping(
         "inventorio.keys.next_utility",
         InputConstants.Type.MOUSE,
         InputConstants.MOUSE_BUTTON_4,
-        "inventorio.keys.category",
+        CATEGORY,
     )
 
     @JvmField val keyPrevUtility = KeyMapping(
         "inventorio.keys.prev_utility",
         InputConstants.Type.MOUSE,
         InputConstants.MOUSE_BUTTON_5,
-        "inventorio.keys.category",
+        CATEGORY,
     )
 
     @JvmField val keyEmptyUtility = KeyMapping(
         "inventorio.keys.empty_utility",
-        InputConstants.Type.KEYSYM,
+        InputConstants.Type.KEYBOARD,
         InputConstants.UNKNOWN.value,
-        "inventorio.keys.category",
+        CATEGORY,
     )
 
     @JvmField val keyFireBoostRocket = KeyCoBinding(
         "inventorio.keys.combined.with_jump",
-        { Minecraft.getInstance()?.options?.jumpKey },
+        { Minecraft.getInstance()?.options?.keyJump },
         "inventorio.keys.rocket_boost",
-        InputConstants.Type.KEYSYM,
+        InputConstants.Type.KEYBOARD,
         InputConstants.UNKNOWN.value,
-        "inventorio.keys.category",
+        CATEGORY,
     )
 
     @JvmField val keyOpenPlayerSettingsMenu = KeyMapping(
         "inventorio.keys.open_player_settings",
-        InputConstants.Type.KEYSYM,
+        InputConstants.Type.KEYBOARD,
         InputConstants.KEY_I,
-        "inventorio.keys.category",
+        CATEGORY,
     )
 
     @JvmField val keyOpenGlobalSettingsMenu = KeyMapping(
         "inventorio.keys.open_global_settings",
-        InputConstants.Type.KEYSYM,
+        InputConstants.Type.KEYBOARD,
         InputConstants.KEY_O,
-        "inventorio.keys.category",
+        CATEGORY,
     )
 
     @JvmField val keys = arrayOf(

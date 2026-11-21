@@ -22,16 +22,16 @@ fun <T : CustomPacketPayload> consumeServer(consumer: T.(Executor, ServerPlayer)
 
 object InventorioNetworkingFabric : InventorioNetworking {
     init {
-        PayloadTypeRegistry.playS2C().register(SelectUtilitySlotPacket.ID, SelectUtilitySlotPacket.CODEC)
-        PayloadTypeRegistry.playS2C().register(GlobalSettingsS2CPacket.ID, GlobalSettingsS2CPacket.CODEC)
-        PayloadTypeRegistry.playS2C().register(UpdateAddonStacksS2CPacket.ID, UpdateAddonStacksS2CPacket.CODEC)
+        PayloadTypeRegistry.clientboundPlay().register(SelectUtilitySlotPacket.ID, SelectUtilitySlotPacket.CODEC)
+        PayloadTypeRegistry.clientboundPlay().register(GlobalSettingsS2CPacket.ID, GlobalSettingsS2CPacket.CODEC)
+        PayloadTypeRegistry.clientboundPlay().register(UpdateAddonStacksS2CPacket.ID, UpdateAddonStacksS2CPacket.CODEC)
 
-        PayloadTypeRegistry.playC2S().register(SelectUtilitySlotPacket.ID, SelectUtilitySlotPacket.CODEC)
-        PayloadTypeRegistry.playC2S().register(UseBoostRocketC2SPacket.ID, UseBoostRocketC2SPacket.CODEC)
-        PayloadTypeRegistry.playC2S().register(SwapItemsInHandsKeyC2SPacket.ID, SwapItemsInHandsKeyC2SPacket.CODEC)
-        PayloadTypeRegistry.playC2S().register(SwappedHandsModeC2SPacket.ID, SwappedHandsModeC2SPacket.CODEC)
-        PayloadTypeRegistry.playC2S().register(MoveItemToUtilityBeltC2SPacket.ID, MoveItemToUtilityBeltC2SPacket.CODEC)
-        PayloadTypeRegistry.playC2S().register(OpenInventorioScreenC2SPacket.ID, OpenInventorioScreenC2SPacket.CODEC)
+        PayloadTypeRegistry.serverboundPlay().register(SelectUtilitySlotPacket.ID, SelectUtilitySlotPacket.CODEC)
+        PayloadTypeRegistry.serverboundPlay().register(UseBoostRocketC2SPacket.ID, UseBoostRocketC2SPacket.CODEC)
+        PayloadTypeRegistry.serverboundPlay().register(SwapItemsInHandsKeyC2SPacket.ID, SwapItemsInHandsKeyC2SPacket.CODEC)
+        PayloadTypeRegistry.serverboundPlay().register(SwappedHandsModeC2SPacket.ID, SwappedHandsModeC2SPacket.CODEC)
+        PayloadTypeRegistry.serverboundPlay().register(MoveItemToUtilityBeltC2SPacket.ID, MoveItemToUtilityBeltC2SPacket.CODEC)
+        PayloadTypeRegistry.serverboundPlay().register(OpenInventorioScreenC2SPacket.ID, OpenInventorioScreenC2SPacket.CODEC)
 
         if (FabricLoader.getInstance().environmentType == EnvType.CLIENT) {
             ClientPlayNetworking.registerGlobalReceiver(

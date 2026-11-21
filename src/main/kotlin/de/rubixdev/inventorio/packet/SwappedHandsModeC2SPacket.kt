@@ -12,7 +12,7 @@ import net.minecraft.server.level.ServerPlayer
 data class SwappedHandsModeC2SPacket(val swappedHands: Boolean = false) : CustomPacketPayload {
     companion object {
         val ID = CustomPacketPayload.Type<SwappedHandsModeC2SPacket>("swapped_hands".id)
-        val CODEC: StreamCodec<ByteBuf, SwappedHandsModeC2SPacket> = ByteBufCodecs.BOOL.xmap(::SwappedHandsModeC2SPacket) { it.swappedHands }
+        val CODEC: StreamCodec<ByteBuf, SwappedHandsModeC2SPacket> = ByteBufCodecs.BOOL.map(::SwappedHandsModeC2SPacket) { it.swappedHands }
     }
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = ID

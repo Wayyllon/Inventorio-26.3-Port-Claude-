@@ -1,0 +1,29 @@
+{
+  "fabric:load_conditions": {
+    "condition": "inventorio:global_setting",
+    "setting": "DeepPocketsBookCraft"
+  },
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_the_recipe": {
+      "conditions": {
+        "recipes": "inventorio:deep_pockets_book"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    },
+    "tick": {
+      "trigger": "minecraft:tick"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "tick"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "inventorio:deep_pockets_book"
+    ]
+  }
+}

@@ -12,7 +12,7 @@ import net.minecraft.server.level.ServerPlayer
 data class MoveItemToUtilityBeltC2SPacket(val sourceSlot: Int = 0) : CustomPacketPayload {
     companion object {
         val ID = CustomPacketPayload.Type<MoveItemToUtilityBeltC2SPacket>("move_to_utility_c2s".id)
-        val CODEC: StreamCodec<ByteBuf, MoveItemToUtilityBeltC2SPacket> = ByteBufCodecs.VAR_INT.xmap(::MoveItemToUtilityBeltC2SPacket) { it.sourceSlot }
+        val CODEC: StreamCodec<ByteBuf, MoveItemToUtilityBeltC2SPacket> = ByteBufCodecs.VAR_INT.map(::MoveItemToUtilityBeltC2SPacket) { it.sourceSlot }
     }
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = ID

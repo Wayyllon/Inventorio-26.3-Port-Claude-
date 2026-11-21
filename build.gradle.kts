@@ -25,8 +25,6 @@ repositories {
     maven("https://maven.fallenbreath.me/releases")
     // Other mods from Modrinth
     maven("https://api.modrinth.com/maven")
-    // YARRP (currently not available for 26.x, see README)
-    maven("https://jitpack.io")
 }
 
 loom {
@@ -51,9 +49,6 @@ dependencies {
     implementation("me.shedaniel.cloth:cloth-config-fabric:${prop("cloth_version")}") {
         exclude(group = "net.fabricmc.fabric-api")
     }
-
-    // TODO(26.3): YARRP has no 26.x build (latest: v0.2.0 for 1.21.1); InventorioResources is stubbed.
-    // implementation("com.github.RubixDev.YARRP:yarrp-mc${prop("minecraft_version")}-fabric:<version>")
 
     // TODO(26.3): optional integrations disabled for now (see disabled/README.md):
     // Trinkets, Clumps, Early Loading Screen

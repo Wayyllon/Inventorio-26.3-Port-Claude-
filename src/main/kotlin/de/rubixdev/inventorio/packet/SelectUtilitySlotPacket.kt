@@ -18,7 +18,7 @@ data class SelectUtilitySlotPacket(val slot: Byte = 0) : CustomPacketPayload {
     companion object {
         val ID = CustomPacketPayload.Type<SelectUtilitySlotPacket>("select_utility".id)
         val CODEC: StreamCodec<ByteBuf, SelectUtilitySlotPacket> =
-            ByteBufCodecs.BYTE.xmap(::SelectUtilitySlotPacket) { it.slot }
+            ByteBufCodecs.BYTE.map(::SelectUtilitySlotPacket) { it.slot }
     }
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = ID
@@ -34,7 +34,7 @@ data class SelectUtilitySlotPacket(val slot: Byte = 0) : CustomPacketPayload {
                     player.id,
                     listOf(Pair(EquipmentSlot.OFFHAND, player.offhandItem)),
                 )
-            (player.level() as ServerLevel).chunkSource.broadcast(player, broadcastPacket)
+            (player.level() as ServerLevel).chunkSource.sendToTrackingPlayers(player, broadcastPacket)
         }
     }
 

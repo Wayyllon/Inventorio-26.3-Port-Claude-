@@ -1,0 +1,127 @@
+{
+  "pack": {
+    "description": "Inventorio: Deep Pockets enchantment tags (controlled by config/inventorio_shared.json)",
+    "min_format": 121,
+    "max_format": 121
+  },
+  "fabric:overlays": {
+    "entries": [
+      {
+        "condition": {
+          "condition": "fabric:and",
+          "values": [
+            {
+              "condition": "inventorio:global_setting",
+              "setting": "DeepPocketsInTrades"
+            },
+            {
+              "condition": "inventorio:global_setting",
+              "setting": "DeepPocketsInRandomSelection"
+            },
+            {
+              "condition": "inventorio:global_setting",
+              "setting": "DeepPocketsInEnchantingTable"
+            }
+          ]
+        },
+        "directory": "non_treasure"
+      },
+      {
+        "condition": {
+          "condition": "fabric:and",
+          "values": [
+            {
+              "condition": "inventorio:global_setting",
+              "setting": "DeepPocketsInTrades"
+            },
+            {
+              "condition": "fabric:not",
+              "value": {
+                "condition": "fabric:and",
+                "values": [
+                  {
+                    "condition": "inventorio:global_setting",
+                    "setting": "DeepPocketsInTrades"
+                  },
+                  {
+                    "condition": "inventorio:global_setting",
+                    "setting": "DeepPocketsInRandomSelection"
+                  },
+                  {
+                    "condition": "inventorio:global_setting",
+                    "setting": "DeepPocketsInEnchantingTable"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "directory": "trades"
+      },
+      {
+        "condition": {
+          "condition": "fabric:and",
+          "values": [
+            {
+              "condition": "inventorio:global_setting",
+              "setting": "DeepPocketsInRandomSelection"
+            },
+            {
+              "condition": "fabric:not",
+              "value": {
+                "condition": "fabric:and",
+                "values": [
+                  {
+                    "condition": "inventorio:global_setting",
+                    "setting": "DeepPocketsInTrades"
+                  },
+                  {
+                    "condition": "inventorio:global_setting",
+                    "setting": "DeepPocketsInRandomSelection"
+                  },
+                  {
+                    "condition": "inventorio:global_setting",
+                    "setting": "DeepPocketsInEnchantingTable"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "directory": "random_loot"
+      },
+      {
+        "condition": {
+          "condition": "fabric:and",
+          "values": [
+            {
+              "condition": "inventorio:global_setting",
+              "setting": "DeepPocketsInEnchantingTable"
+            },
+            {
+              "condition": "fabric:not",
+              "value": {
+                "condition": "fabric:and",
+                "values": [
+                  {
+                    "condition": "inventorio:global_setting",
+                    "setting": "DeepPocketsInTrades"
+                  },
+                  {
+                    "condition": "inventorio:global_setting",
+                    "setting": "DeepPocketsInRandomSelection"
+                  },
+                  {
+                    "condition": "inventorio:global_setting",
+                    "setting": "DeepPocketsInEnchantingTable"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "directory": "enchanting_table"
+      }
+    ]
+  }
+}

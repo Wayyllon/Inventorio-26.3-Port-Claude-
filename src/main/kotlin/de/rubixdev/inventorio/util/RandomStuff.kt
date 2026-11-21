@@ -83,19 +83,19 @@ class MixinDelegate<T>(
 }
 
 /** Turn this String into an [Identifier] in this mod's namespace */
-val String.id get() = Identifier.of(MOD_ID, this)!!
+val String.id get() = Identifier.fromNamespaceAndPath(MOD_ID, this)
 
 /** Turn this String into an [Identifier] in the vanilla namespace */
-fun String.id() = Identifier.withDefaultNamespace(this)!!
+fun String.id() = Identifier.withDefaultNamespace(this)
 
 /** Turn this String into an [Identifier] in the given namespace */
-fun String.id(namespace: String) = Identifier.of(namespace, this)!!
+fun String.id(namespace: String) = Identifier.fromNamespaceAndPath(namespace, this)
 
-fun RegistryAccess.getEnchantment(key: ResourceKey<Enchantment>) =
-    get(Registries.ENCHANTMENT).entryOf(key)!!
+fun RegistryAccess.getEnchantment(key: ResourceKey<Enchantment>): Holder.Reference<Enchantment> =
+    lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(key)
 
-fun HolderLookup.Provider.getEnchantment(key: ResourceKey<Enchantment>) =
-    getWrapperOrThrow(Registries.ENCHANTMENT).getOrThrow(key)!!
+fun HolderLookup.Provider.getEnchantment(key: ResourceKey<Enchantment>): Holder.Reference<Enchantment> =
+    lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(key)
 
-fun Entity.getEnchantment(key: ResourceKey<Enchantment>) =
-    registryManager.getEnchantment(key)
+fun Entity.getEnchantment(key: ResourceKey<Enchantment>): Holder.Reference<Enchantment> =
+    registryAccess().getEnchantment(key)

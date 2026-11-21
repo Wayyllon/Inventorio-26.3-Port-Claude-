@@ -2,6 +2,7 @@
   "enchantment.inventorio.deep_pockets": "Bolsos fundos",
   "enchantment.inventorio.deep_pockets.desc": "Adiciona uma linha de inventário a cada nível.",
   "inventorio.keys.category": "Inventorio",
+  "key.category.inventorio.inventorio": "Inventorio",
   "inventorio.keys.next_utility": "Próxima utilidade",
   "inventorio.keys.prev_utility": "Utilidade anterior",
   "inventorio.keys.use_utility": "Usar utilidade",

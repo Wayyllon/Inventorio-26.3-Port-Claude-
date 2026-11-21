@@ -63,7 +63,7 @@ object InventorioKeyHandler {
         if (addon.selectedHotbarSection == -1) {
             addon.selectedHotbarSection = slotToSelect
         } else {
-            inventory.selected = slotToSelect + 3 * addon.selectedHotbarSection
+            inventory.selectedSlot = slotToSelect + 3 * addon.selectedHotbarSection
             addon.selectedHotbarSection = -1
         }
         return true
@@ -89,8 +89,8 @@ object InventorioKeyHandler {
         val player = client.player ?: return
         val inventoryAddon = player.inventoryAddon ?: return
 
-        if ((client as MinecraftClientAccessor).rightClickDelay <= 0) {
-            if (InventorioControls.keyUseUtility.isPressed && !player.isUsingItem) {
+        if ((client as MinecraftClientAccessor).itemUseCooldown <= 0) {
+            if (InventorioControls.keyUseUtility.isDown && !player.isUsingItem) {
                 PlayerInventoryAddon.Client.activateSelectedUtility()
             }
             if (player.isFallFlying && InventorioControls.keyFireBoostRocket.isThisOrVanillaPressed) {
@@ -98,7 +98,7 @@ object InventorioKeyHandler {
             }
         }
         // This code handles finishing the usage of the utility belt item if you have a dedicated "use utility" key
-        if (!InventorioControls.keyUseUtility.isPressed && PlayerInventoryAddon.Client.isUsingUtility) {
+        if (!InventorioControls.keyUseUtility.isDown && PlayerInventoryAddon.Client.isUsingUtility) {
             client.gameMode?.releaseUsingItem(player)
         }
 
@@ -114,10 +114,10 @@ object InventorioKeyHandler {
         }
 
         if (InventorioControls.keyOpenPlayerSettingsMenu.consumeClick()) {
-            client.setScreen(PlayerSettingsScreen.get(client.screen))
+            client.gui.setScreen(PlayerSettingsScreen.get(client.gui.screen()))
         }
         if (InventorioControls.keyOpenGlobalSettingsMenu.consumeClick()) {
-            client.setScreen(GlobalSettingsScreen.get(client.screen))
+            client.gui.setScreen(GlobalSettingsScreen.get(client.gui.screen()))
         }
     }
 }

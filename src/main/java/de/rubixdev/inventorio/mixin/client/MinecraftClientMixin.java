@@ -2,20 +2,17 @@ package de.rubixdev.inventorio.mixin.client;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.llamalad7.mixinextras.sugar.Local;
 import de.rubixdev.inventorio.client.control.InventorioKeyHandler;
 import de.rubixdev.inventorio.client.ui.InventorioScreen;
 import de.rubixdev.inventorio.packet.InventorioNetworking;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.InteractionHand;
-import org.jetbrains.annotations.Nullable;
-import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -30,9 +27,6 @@ public class MinecraftClientMixin {
     @Shadow
     public LocalPlayer player;
 
-    @Shadow
-    @Nullable public Screen screen;
-
     /**
      * This injection opens the Inventorio Screen instead of the Vanilla Player
      * Screen
@@ -41,17 +35,17 @@ public class MinecraftClientMixin {
         method = "handleKeybinds",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/Minecraft;setScreen(Lnet/minecraft/client/gui/screens/Screen;)V",
+            target = "Lnet/minecraft/client/gui/Gui;setScreen(Lnet/minecraft/client/gui/screens/Screen;)V",
             ordinal = 0
         ),
         slice = @Slice(
             from = @At(value = "INVOKE", target = "Lnet/minecraft/client/tutorial/Tutorial;onOpenInventory()V")
         )
     )
-    private void inventorioOpenReplacingScreen(Minecraft instance, Screen old, Operation<Void> original) {
+    private void inventorioOpenReplacingScreen(Gui instance, Screen old, Operation<Void> original) {
         if (
             InventorioScreen.shouldOpenVanillaInventory
-                || (instance.gameMode != null && instance.gameMode.hasInfiniteItems())
+                || (player != null && player.hasInfiniteMaterials())
         ) {
             original.call(instance, old);
         } else {
@@ -63,18 +57,17 @@ public class MinecraftClientMixin {
      * This injection replaces vanilla Hotbar slot selection with ours
      * (Segmented Hotbar)
      */
-    @SuppressWarnings("InvalidInjectorMethodSignature")
     @WrapOperation(
         method = "handleKeybinds",
-        at = @At(value = "FIELD", target = "Lnet/minecraft/world/entity/player/Inventory;selected:I")
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Inventory;setSelectedSlot(I)V")
     )
     private void inventorioHandleHotbarSlotSelection(
         Inventory instance,
         int value,
-        Operation<Integer> original,
-        @Local int i
+        Operation<Void> original
     ) {
-        if (!InventorioKeyHandler.INSTANCE.handleSegmentedHotbarSlotSelection(instance, i)) {
+        // 26.3: vanilla calls setSelectedSlot(i) with the hotbar key index i
+        if (!InventorioKeyHandler.INSTANCE.handleSegmentedHotbarSlotSelection(instance, value)) {
             original.call(instance, value);
         }
     }
@@ -114,26 +107,7 @@ public class MinecraftClientMixin {
         return InventorioKeyHandler.INSTANCE.handleItemUsage(player);
     }
 
-    /**
-     * This injection stops the game from locking the cursor back to 0,0 when
-     * swapping between the Inventorio and vanilla Inventory screens.
-     */
-    @Inject(
-        method = "setScreen",
-        at = @At(
-            value = "FIELD",
-            target = "Lnet/minecraft/client/Minecraft;screen:Lnet/minecraft/client/gui/screens/Screen;",
-            opcode = Opcodes.PUTFIELD
-        ),
-        cancellable = true
-    )
-    private void seamlessScreenTransition(Screen screen, CallbackInfo ci) {
-        if (
-            InventorioScreen.isSwappingInvScreens
-                && screen == null
-                && (screen instanceof InventorioScreen || screen instanceof InventoryScreen)
-        ) {
-            ci.cancel();
-        }
-    }
+    // 26.3: upstream's `seamlessScreenTransition` (@Inject into Minecraft#setScreen at the PUTFIELD of
+    // `screen`) was dropped. Screen handling moved to Gui#setScreen and the upstream condition
+    // (`screen == null && screen instanceof ...`) could never be true, so the injection was a no-op.
 }

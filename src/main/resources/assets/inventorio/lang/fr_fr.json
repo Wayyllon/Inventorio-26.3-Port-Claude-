@@ -2,6 +2,7 @@
   "enchantment.inventorio.deep_pockets": "Grandes Poches",
   "enchantment.inventorio.deep_pockets.desc": "Ajoute une ligne d'inventaire au joueur par niveau.",
   "inventorio.keys.category": "Inventorio",
+  "key.category.inventorio.inventorio": "Inventorio",
   "inventorio.keys.next_utility": "Prochaine case de la main secondaire",
   "inventorio.keys.prev_utility": "Précédente case de la main secondaire",
   "inventorio.keys.use_utility": "Utiliser avec la main secondaire",

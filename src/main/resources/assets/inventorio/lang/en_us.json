@@ -2,6 +2,7 @@
   "enchantment.inventorio.deep_pockets": "Deep Pockets",
   "enchantment.inventorio.deep_pockets.desc": "Adds an additional player inventory row per level.",
   "inventorio.keys.category": "Inventorio",
+  "key.category.inventorio.inventorio": "Inventorio",
   "inventorio.keys.next_utility": "Next Utility",
   "inventorio.keys.prev_utility": "Previous Utility",
   "inventorio.keys.use_utility": "Use Utility",
