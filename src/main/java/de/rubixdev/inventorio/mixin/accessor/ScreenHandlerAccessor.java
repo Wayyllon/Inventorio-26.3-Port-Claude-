@@ -2,6 +2,7 @@ package de.rubixdev.inventorio.mixin.accessor;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.RemoteSlot;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.core.NonNullList;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,8 +15,9 @@ public interface ScreenHandlerAccessor {
     @Accessor("lastSlots")
     NonNullList<ItemStack> getTrackedStacks();
 
+    // 26.3: remote slots are tracked as RemoteSlot instead of ItemStack
     @Accessor("remoteSlots")
-    NonNullList<ItemStack> getPreviousTrackedStacks();
+    NonNullList<RemoteSlot> getPreviousTrackedStacks();
 
     @Invoker("addSlot")
     Slot callAddSlot(Slot slot);

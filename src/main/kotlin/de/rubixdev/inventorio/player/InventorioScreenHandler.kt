@@ -20,14 +20,12 @@ import net.minecraft.client.Minecraft
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.entity.player.Inventory
-import net.minecraft.world.inventory.TransientCraftingContainer
-import net.minecraft.world.inventory.ResultContainer
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.util.Prediction
 import net.minecraft.world.Container
+import net.minecraft.world.inventory.AbstractCraftingMenu
 import net.minecraft.world.item.ItemStack
-import net.minecraft.world.item.crafting.RecipeHolder
-import net.minecraft.world.entity.player.StackedContents
 import net.minecraft.world.inventory.RecipeBookType
-import net.minecraft.world.inventory.RecipeBookMenu
 import net.minecraft.world.SimpleMenuProvider
 import net.minecraft.world.inventory.ResultSlot
 import net.minecraft.world.inventory.Slot
@@ -35,16 +33,13 @@ import net.minecraft.world.inventory.ContainerInput
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
 
-import net.minecraft.world.item.crafting.CraftingRecipe
-import net.minecraft.world.item.crafting.CraftingInput
-
 class InventorioScreenHandler(syncId: Int, val inventory: Inventory) :
-    RecipeBookMenu<CraftingInput, CraftingRecipe>
-    (ScreenTypeProvider.INSTANCE.getScreenHandlerType(), syncId) {
+    AbstractCraftingMenu(ScreenTypeProvider.INSTANCE.getScreenHandlerType(), syncId, 2, 2) {
     val inventoryAddon = inventory.player.inventoryAddon!!
 
-    private val craftingInput = TransientCraftingContainer(this, 2, 2)
-    private val craftingResult = ResultContainer()
+    // 26.3: the crafting grid and result containers are owned by AbstractCraftingMenu
+    private val craftingInput get() = craftSlots
+    private val craftingResult get() = resultSlots
 
     // ===================================================
     // Modified methods
@@ -52,13 +47,13 @@ class InventorioScreenHandler(syncId: Int, val inventory: Inventory) :
     init {
         // Crafting Grid
         if (GlobalSettings.allow2x2CraftingGrid.boolValue) {
-            addSlot(ResultSlot(inventory.player, craftingInput, craftingResult, 0, 174, 28))
+            addSlot(ResultSlot(inventory.player, craftSlots, resultSlots, 0, 174, 28))
             for (i in 0..3)
-                addSlot(Slot(craftingInput, i, 118 + i % 2 * 18, 18 + i / 2 * 18))
+                addSlot(Slot(craftSlots, i, 118 + i % 2 * 18, 18 + i / 2 * 18))
         } else {
             addSlot(BlockedSlot(inventory, 0, 174, 28))
             for (i in 0..3)
-                addSlot(BlockedSlot(craftingInput, i, 118 + i % 2 * 18, 18 + i / 2 * 18))
+                addSlot(BlockedSlot(craftSlots, i, 118 + i % 2 * 18, 18 + i / 2 * 18))
         }
 
         // Armor
@@ -128,7 +123,7 @@ class InventorioScreenHandler(syncId: Int, val inventory: Inventory) :
         val stackStatic = quickMoveInner(player, sourceIndex, stackDynamic)
         if (stackStatic.isNotEmpty) {
             if (stackDynamic.isEmpty) {
-                sourceSlot.item = ItemStack.EMPTY
+                sourceSlot.setByPlayer(ItemStack.EMPTY)
             } else {
                 sourceSlot.setChanged()
             }
@@ -223,10 +218,10 @@ class InventorioScreenHandler(syncId: Int, val inventory: Inventory) :
         val itemStackDynamic = sourceSlot.item
         val beltRange = getAvailableUtilityBeltRange()
         // If this is true, we send an item to the utility belt
-        if (sourceSlot.id !in beltRange) {
-            if (insertItem(itemStackDynamic, beltRange.first, beltRange.last + 1, false)) {
-                if (inventoryAddon.player.level().isClientSide) {
-                    InventorioNetworking.INSTANCE.c2sMoveItemToUtilityBelt(sourceSlot.id)
+        if (sourceSlot.index !in beltRange) {
+            if (moveItemStackTo(itemStackDynamic, beltRange.first, beltRange.last + 1, false)) {
+                if (inventoryAddon.player.level().isClientSide()) {
+                    InventorioNetworking.INSTANCE.c2sMoveItemToUtilityBelt(sourceSlot.index)
                 }
                 return true
             }
@@ -234,11 +229,11 @@ class InventorioScreenHandler(syncId: Int, val inventory: Inventory) :
         }
         // If we're here, we're sending an item FROM the utility belt to the rest of the inventory
         val deepPocketsRange = getAvailableDeepPocketsRange()
-        if (insertItem(itemStackDynamic, mainInventoryRange.first, mainInventoryRange.last + 1, false)
-            || insertItem(itemStackDynamic, deepPocketsRange.first, deepPocketsRange.last + 1, false)
+        if (moveItemStackTo(itemStackDynamic, mainInventoryRange.first, mainInventoryRange.last + 1, false)
+            || moveItemStackTo(itemStackDynamic, deepPocketsRange.first, deepPocketsRange.last + 1, false)
         ) {
-            if (inventoryAddon.player.level().isClientSide) {
-                InventorioNetworking.INSTANCE.c2sMoveItemToUtilityBelt(sourceSlot.id)
+            if (inventoryAddon.player.level().isClientSide()) {
+                InventorioNetworking.INSTANCE.c2sMoveItemToUtilityBelt(sourceSlot.index)
             }
             return true
         }
@@ -259,27 +254,27 @@ class InventorioScreenHandler(syncId: Int, val inventory: Inventory) :
 
         for (i in getUnavailableDeepPocketsRange()) {
             val slot = getSlot(i) as DeepPocketsSlot
-            player.drop(slot.item, false, true)
-            slot.set(ItemStack.EMPTY)
+            player.drop(slot.item, true, Prediction.PREDICTED)
+            slot.setByPlayer(ItemStack.EMPTY)
             slot.canTakeItems = false
         }
         for (i in getUnavailableUtilityBeltRange()) {
             val slot = getSlot(i) as DeepPocketsSlot
-            player.drop(slot.item, false, true)
-            slot.set(ItemStack.EMPTY)
+            player.drop(slot.item, true, Prediction.PREDICTED)
+            slot.setByPlayer(ItemStack.EMPTY)
             slot.canTakeItems = false
             if (inventoryAddon.selectedUtility >= UTILITY_BELT_SMALL_SIZE) {
                 inventoryAddon.selectedUtility -= UTILITY_BELT_SMALL_SIZE
             }
         }
-        if (inventoryAddon.player.level().isClientSide) {
+        if (inventoryAddon.player.level().isClientSide()) {
             refreshSlotPositions()
         }
     }
 
     @Environment(EnvType.CLIENT)
     private fun refreshSlotPositions() {
-        (Minecraft.getInstance().screen as? InventorioScreen)?.onRefresh()
+        (Minecraft.getInstance().gui.screen() as? InventorioScreen)?.onRefresh()
         val deepPocketsRowCount = inventoryAddon.getDeepPocketsRowCount()
 
         for ((absoluteIndex, relativeIndex) in mainInventoryWithoutHotbarRange.withRelativeIndex()) {
@@ -325,37 +320,26 @@ class InventorioScreenHandler(syncId: Int, val inventory: Inventory) :
     // ===================================================
     // Unmodified methods lifted from InventoryScreen
     // ===================================================
-    override fun shouldMoveToInventory(index: Int): Boolean {
-        return index != this.resultSlotIndex
-    }
-
-    override fun fillCraftSlotsStackedContents(finder: StackedContents) {
-        craftingInput.fillStackedContents(finder)
-    }
-
-    override fun clearCraftingContent() {
-        craftingResult.clear()
-        craftingInput.clear()
-    }
-
-    override fun recipeMatches(recipe: RecipeHolder<CraftingRecipe>?): Boolean =
-        recipe?.value?.matches(craftingInput.asCraftInput(), inventory.player.level()) ?: false
-
+    // 26.3: recipe book placement (fillCraftSlotsStackedContents, clearCraftingContent, recipeMatches,
+    // grid width/height) is handled by AbstractCraftingMenu
     override fun slotsChanged(inventory: Container) {
-        CraftingScreenHandlerAccessor.updateTheResult(
-            this,
-            this.inventory.player.level(),
-            this.inventory.player,
-            this.craftingInput,
-            this.craftingResult,
-            null,
-        )
+        val level = this.inventory.player.level()
+        if (level is ServerLevel) {
+            CraftingScreenHandlerAccessor.updateTheResult(
+                this,
+                level,
+                this.inventory.player,
+                this.craftingInput,
+                this.craftingResult,
+                null,
+            )
+        }
     }
 
     override fun removed(player: Player) {
         super.removed(player)
-        craftingResult.clear()
-        if (!player.level().isClientSide) {
+        craftingResult.clearContent()
+        if (!player.level().isClientSide()) {
             clearContainer(player, craftingInput)
         }
     }
@@ -364,25 +348,15 @@ class InventorioScreenHandler(syncId: Int, val inventory: Inventory) :
         return true
     }
 
-    override fun shouldMoveToInventory(stack: ItemStack, slot: Slot): Boolean {
-        return slot.inventory !== craftingResult && super.shouldMoveToInventory(stack, slot)
+    override fun canTakeItemForPickAll(carried: ItemStack, target: Slot): Boolean {
+        return target.container !== craftingResult && super.canTakeItemForPickAll(carried, target)
     }
 
-    override fun getResultSlotIndex(): Int {
-        return 0
-    }
+    override fun getResultSlot(): Slot = slots[0]
 
-    override fun getGridWidth(): Int {
-        return craftingInput.width
-    }
+    override fun getInputGridSlots(): List<Slot> = slots.subList(1, 5)
 
-    override fun getGridHeight(): Int {
-        return craftingInput.height
-    }
-
-    override fun getSize(): Int {
-        return 5
-    }
+    override fun owner(): Player = inventory.player
 
     override fun getRecipeBookType(): RecipeBookType {
         return RecipeBookType.CRAFTING
@@ -394,7 +368,7 @@ class InventorioScreenHandler(syncId: Int, val inventory: Inventory) :
     }
 
     @Suppress("RedundantOverride") // this makes it easier to add functionality for mod compat via mixin
-    override fun setItem(slot: Int, revision: Int, stack: ItemStack?) {
+    override fun setItem(slot: Int, revision: Int, stack: ItemStack) {
         super.setItem(slot, revision, stack)
     }
 
@@ -414,7 +388,7 @@ class InventorioScreenHandler(syncId: Int, val inventory: Inventory) :
 
         @JvmStatic
         val Player.inventorioScreenHandler: InventorioScreenHandler?
-            get() = currentScreenHandler as? InventorioScreenHandler
+            get() = containerMenu as? InventorioScreenHandler
 
         private val openConsumers = mutableMapOf<Identifier, Consumer<InventorioScreenHandler>>()
         private val armorSlots = arrayOf(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET)

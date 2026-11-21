@@ -23,13 +23,13 @@ abstract class PlayerInventoryHandFeatures protected constructor(player: Player)
     var swappedHands = false
         set(value) {
             field = GlobalSettings.allowSwappedHands.boolValue && value
-            if (player.level().isClientSide) {
+            if (player.level().isClientSide()) {
                 InventorioNetworking.INSTANCE.c2sSetSwappedHandsMode(value)
             }
         }
 
     init {
-        if (player.level().isClientSide) {
+        if (player.level().isClientSide()) {
             swappedHands = PlayerSettings.swappedHands.boolValue
         }
     }
@@ -80,8 +80,8 @@ abstract class PlayerInventoryHandFeatures protected constructor(player: Player)
      * Returns the item selected on the hotbar, regardless of [swappedHands] or [displayTool]
      */
     fun getSelectedHotbarStack(): ItemStack {
-        if (Inventory.isHotbarSlot(player.inventory.selected)) {
-            return player.inventory.getItem(player.inventory.selected)
+        if (Inventory.isHotbarSlot(player.inventory.selectedSlot)) {
+            return player.inventory.getItem(player.inventory.selectedSlot)
         }
         return ItemStack.EMPTY
     }
@@ -97,8 +97,8 @@ abstract class PlayerInventoryHandFeatures protected constructor(player: Player)
      * Replaces the currently selected item on the hotbar, regardless of [swappedHands] or [displayTool]
      */
     fun setSelectedHotbarStack(itemStack: ItemStack) {
-        if (Inventory.isHotbarSlot(player.inventory.selected)) {
-            player.inventory.setItem(player.inventory.selected, itemStack)
+        if (Inventory.isHotbarSlot(player.inventory.selectedSlot)) {
+            player.inventory.setItem(player.inventory.selectedSlot, itemStack)
         }
     }
 

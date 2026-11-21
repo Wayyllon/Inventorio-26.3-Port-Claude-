@@ -1,65 +1,62 @@
 package de.rubixdev.inventorio.player
 
+import net.minecraft.util.Prediction
+import net.minecraft.world.ItemStackWithSlot
 import net.minecraft.world.item.ItemStack
-import net.minecraft.nbt.CompoundTag
-import net.minecraft.nbt.ListTag
-import net.minecraft.core.HolderLookup
+import net.minecraft.world.level.storage.ValueInput
+import net.minecraft.world.level.storage.ValueOutput
 
+/**
+ * 26.3: player data is saved through [ValueOutput]/[ValueInput] instead of raw NBT.
+ * The on-disk layout is unchanged: an `Inventorio` compound with `SelectedUtilitySlot` and the
+ * `DeepPockets`, `UtilityBelt` and `ToolBelt` lists of `{Slot, id, count, components}` entries.
+ */
 object PlayerAddonSerializer {
     fun serialize(
-        registries: HolderLookup.Provider,
         inventoryAddon: PlayerInventoryAddon,
-        inventorioTag: CompoundTag,
+        inventorioTag: ValueOutput,
     ) {
         inventorioTag.putInt("SelectedUtilitySlot", inventoryAddon.selectedUtility)
-        inventorioTag.put("DeepPockets", serializeSection(registries, inventoryAddon.deepPockets))
-        inventorioTag.put("UtilityBelt", serializeSection(registries, inventoryAddon.utilityBelt))
-        inventorioTag.put("ToolBelt", serializeSection(registries, inventoryAddon.toolBelt))
+        serializeSection(inventorioTag.list("DeepPockets", ItemStackWithSlot.CODEC), inventoryAddon.deepPockets)
+        serializeSection(inventorioTag.list("UtilityBelt", ItemStackWithSlot.CODEC), inventoryAddon.utilityBelt)
+        serializeSection(inventorioTag.list("ToolBelt", ItemStackWithSlot.CODEC), inventoryAddon.toolBelt)
     }
 
-    private fun serializeSection(registries: HolderLookup.Provider, section: List<ItemStack>): ListTag {
-        val resultTag = ListTag()
+    private fun serializeSection(output: ValueOutput.TypedOutputList<ItemStackWithSlot>, section: List<ItemStack>) {
         for ((slotIndex, itemStack) in section.withIndex()) {
             if (itemStack.isEmpty) {
                 continue
             }
-            var itemTag = CompoundTag()
-            itemTag.putInt("Slot", slotIndex)
-            itemTag = itemStack.save(registries, itemTag) as CompoundTag
-            resultTag.add(itemTag)
+            output.add(ItemStackWithSlot(slotIndex, itemStack))
         }
-        return resultTag
     }
 
     fun deserialize(
-        registries: HolderLookup.Provider,
         inventoryAddon: PlayerInventoryAddon,
-        inventorioTag: CompoundTag,
+        inventorioTag: ValueInput,
     ) {
-        inventoryAddon.selectedUtility = inventorioTag.getInt("SelectedUtilitySlot")
+        inventoryAddon.selectedUtility = inventorioTag.getIntOr("SelectedUtilitySlot", 0)
 
-        deserializeSection(registries, inventoryAddon, inventoryAddon.utilityBelt, inventorioTag.getList("UtilityBelt", 10))
-        deserializeSection(registries, inventoryAddon, inventoryAddon.toolBelt, inventorioTag.getList("ToolBelt", 10))
-        deserializeSection(registries, inventoryAddon, inventoryAddon.deepPockets, inventorioTag.getList("DeepPockets", 10))
+        deserializeSection(inventoryAddon, inventoryAddon.utilityBelt, inventorioTag.listOrEmpty("UtilityBelt", ItemStackWithSlot.CODEC))
+        deserializeSection(inventoryAddon, inventoryAddon.toolBelt, inventorioTag.listOrEmpty("ToolBelt", ItemStackWithSlot.CODEC))
+        deserializeSection(inventoryAddon, inventoryAddon.deepPockets, inventorioTag.listOrEmpty("DeepPockets", ItemStackWithSlot.CODEC))
     }
 
     private fun deserializeSection(
-        registries: HolderLookup.Provider,
         inventoryAddon: PlayerInventoryAddon,
         inventorySection: MutableList<ItemStack>,
-        sectionTag: ListTag,
+        sectionTag: ValueInput.TypedInputList<ItemStackWithSlot>,
     ) {
         for (i in inventorySection.indices)
             inventorySection[i] = ItemStack.EMPTY
 
-        for (itemTag in sectionTag) {
-            val compoundTag = itemTag as CompoundTag
-            val itemStack = ItemStack.parseOptional(registries, compoundTag)
-            val slotIndex = compoundTag.getInt("Slot")
+        for (entry in sectionTag) {
+            val itemStack = entry.stack()
+            val slotIndex = entry.slot()
             if (slotIndex in inventorySection.indices) {
                 inventorySection[slotIndex] = itemStack
             } else {
-                inventoryAddon.player.dropItem(itemStack, false)
+                inventoryAddon.player.drop(itemStack, false, Prediction.SERVER_ONLY)
             }
         }
     }

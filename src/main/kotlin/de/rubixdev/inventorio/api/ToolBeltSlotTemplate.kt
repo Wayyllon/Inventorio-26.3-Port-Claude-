@@ -34,6 +34,6 @@ class ToolBeltSlotTemplate(val name: String, val emptyIcon: Identifier) {
     }
 
     private fun testTag(itemStack: ItemStack, identifier: Identifier): Boolean {
-        return itemStack.getTags().anyMatch { it.id == identifier }
+        return itemStack.typeHolder().tags().anyMatch { it.location == identifier }
     }
 }

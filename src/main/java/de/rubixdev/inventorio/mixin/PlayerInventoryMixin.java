@@ -1,12 +1,8 @@
 package de.rubixdev.inventorio.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import de.rubixdev.inventorio.client.control.InventorioKeyHandler;
 import de.rubixdev.inventorio.player.PlayerInventoryAddon;
 import de.rubixdev.inventorio.util.MixinHelpers;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.SimpleContainer;
@@ -40,20 +36,17 @@ public abstract class PlayerInventoryMixin {
         );
     }
 
-    @Inject(method = "getSelected", at = @At(value = "RETURN"), cancellable = true)
+    /**
+     * 26.3: {@code getSelected} was renamed to {@code getSelectedItem}. The
+     * block breaking speed hook (formerly on {@code Inventory.getDestroySpeed},
+     * which no longer exists) moved to {@link PlayerEntityMixin}.
+     */
+    @Inject(method = "getSelectedItem", at = @At(value = "RETURN"), cancellable = true)
     private void inventorioGetMainHandStack(CallbackInfoReturnable<ItemStack> cir) {
         MixinHelpers.withInventoryAddon(player, inventorioAddon -> {
             ItemStack mainHandStack = inventorioAddon.getDisplayedMainHandStack();
             if (mainHandStack != null) cir.setReturnValue(mainHandStack);
         });
-    }
-
-    @Inject(method = "getDestroySpeed", at = @At(value = "RETURN"), cancellable = true)
-    private void inventorioGetBlockBreakingSpeed(BlockState block, CallbackInfoReturnable<Float> cir) {
-        MixinHelpers.withInventoryAddon(
-            player,
-            inventorioAddon -> cir.setReturnValue(inventorioAddon.getMiningSpeedMultiplier(block))
-        );
     }
 
     /**
@@ -103,17 +96,8 @@ public abstract class PlayerInventoryMixin {
         MixinHelpers.withInventoryAddon(player, SimpleContainer::clearContent);
     }
 
-    /**
-     * If player has a "scroll utility belt with a mouse wheel" setting enabled,
-     * hijack the vanilla hotbar scrolling and scroll the utility belt instead.
-     * Otherwise, set the selected hotbar segment value to -1 in case a player
-     * scrolls a mouse wheel while using Segmented Hotbar
-     */
-    @Inject(method = "swapPaint", at = @At(value = "HEAD"), cancellable = true)
-    @Environment(EnvType.CLIENT)
-    private void inventorioScrollInHotbar(double scrollAmount, CallbackInfo ci) {
-        if (InventorioKeyHandler.INSTANCE.scrollInHotbar(player, scrollAmount)) ci.cancel();
-    }
+    // 26.3: Inventory.swapPaint was removed; the hotbar scrolling hook moved to
+    // client.MouseHandlerMixin
 
     @ModifyReturnValue(method = "contains(Lnet/minecraft/world/item/ItemStack;)Z", at = @At("RETURN"))
     private boolean searchAddon(boolean original, ItemStack stack) {

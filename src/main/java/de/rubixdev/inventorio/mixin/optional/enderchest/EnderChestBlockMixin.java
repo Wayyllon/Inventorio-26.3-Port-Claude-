@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(value = EnderChestBlock.class)
 public class EnderChestBlockMixin {
     @Redirect(
-        method = "lambda$useWithoutItem$1",
+        method = "lambda$useWithoutItem$0",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/world/inventory/ChestMenu;threeRows(ILnet/minecraft/world/entity/player/Inventory;Lnet/minecraft/world/Container;)Lnet/minecraft/world/inventory/ChestMenu;"

@@ -5,7 +5,7 @@ import de.rubixdev.inventorio.util.MixinHelpers;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.core.NonNullList;
+import java.util.List;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -22,7 +22,7 @@ public class ServerPlayerEntity_ScreenHandlerSyncHandlerMixin {
     @Inject(method = "sendInitialData", at = @At("HEAD"))
     private void updateAddonState(
         AbstractContainerMenu handler,
-        NonNullList<ItemStack> stacks,
+        List<ItemStack> stacks,
         ItemStack cursorStack,
         int[] properties,
         CallbackInfo ci
