@@ -13,9 +13,9 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 data class GlobalSettingsS2CPacket(val settings: JsonObject = GlobalSettings.asJson()) : CustomPacketPayload {
     companion object {
         val ID = CustomPacketPayload.Type<GlobalSettingsS2CPacket>("global_settings".id)
-        val CODEC: StreamCodec<ByteBuf, GlobalSettingsS2CPacket> = ByteBufCodecs.STRING_UTF8.xmap(
-            { jsonString -> GlobalSettingsS2CPacket(Gson().fromJson(jsonString, JsonObject::class.java)) },
-            { packet -> packet.settings.toString() },
+        val CODEC: StreamCodec<ByteBuf, GlobalSettingsS2CPacket> = ByteBufCodecs.STRING_UTF8.map(
+            { jsonString: String -> GlobalSettingsS2CPacket(Gson().fromJson(jsonString, JsonObject::class.java)) },
+            { packet: GlobalSettingsS2CPacket -> packet.settings.toString() },
         )
     }
 

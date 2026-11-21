@@ -4,7 +4,6 @@ import de.rubixdev.inventorio.api.InventorioAPI
 import de.rubixdev.inventorio.client.control.InventorioControls
 import de.rubixdev.inventorio.client.control.InventorioKeyHandler
 import de.rubixdev.inventorio.config.PlayerSettings
-import de.rubixdev.inventorio.enchantment.DeepPocketsBookRecipe
 import de.rubixdev.inventorio.integration.InventorioModIntegration
 import de.rubixdev.inventorio.integration.ModIntegration
 import de.rubixdev.inventorio.packet.InventorioNetworking
@@ -15,9 +14,6 @@ import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
 import net.fabricmc.loader.api.FabricLoader
-import net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer
-import net.minecraft.core.registries.BuiltInRegistries
-import net.minecraft.core.Registry
 
 
 open class InventorioFabric : ModInitializer {
@@ -28,11 +24,7 @@ open class InventorioFabric : ModInitializer {
     override fun onInitialize() {
         ScreenTypeProvider.INSTANCE = ScreenTypeProviderFabric
         InventorioNetworking.INSTANCE = InventorioNetworkingFabric
-        DeepPocketsBookRecipe.SERIALIZER = Registry.register(
-            BuiltInRegistries.RECIPE_SERIALIZER,
-            "deep_pockets_book".id,
-            SimpleCraftingRecipeSerializer { category -> DeepPocketsBookRecipe(category) },
-        )
+        // Deep Pockets book recipe is now a data-driven shapeless recipe (see InventorioResources)
         InventorioResources.register()
 
         initToolBelt()

@@ -15,7 +15,7 @@ data class UpdateAddonStacksS2CPacket(val updatedStacks: Map<Int, ItemStack>) : 
         private val MAP_CODEC: StreamCodec<RegistryFriendlyByteBuf, Map<Int, ItemStack>> =
             ByteBufCodecs.map(::LinkedHashMap, ByteBufCodecs.VAR_INT, ItemStack.OPTIONAL_STREAM_CODEC)
         val CODEC: StreamCodec<RegistryFriendlyByteBuf, UpdateAddonStacksS2CPacket> =
-            MAP_CODEC.xmap(::UpdateAddonStacksS2CPacket) { it.updatedStacks }
+            MAP_CODEC.map(::UpdateAddonStacksS2CPacket) { it.updatedStacks }
     }
 
     fun consume(executor: Executor) {

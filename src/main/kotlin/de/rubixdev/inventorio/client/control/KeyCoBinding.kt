@@ -12,13 +12,14 @@ import net.minecraft.network.chat.Component
  * This is the fix: the co-bound binding will unbind itself if binded to the same key.
  */
 @Environment(EnvType.CLIENT)
-open class KeyCoBinding(protected val coBindTranslationKey: String, protected val vanillaBinging: () -> KeyMapping?, translationKey: String, type: InputConstants.Type, code: Int, category: String) : KeyMapping(translationKey, type, code, category) {
+open class KeyCoBinding(protected val coBindTranslationKey: String, protected val vanillaBinging: () -> KeyMapping?, translationKey: String, type: InputConstants.Type, code: Int, category: KeyMapping.Category) : KeyMapping(translationKey, type, code, category) {
     open val isThisOrVanillaPressed: Boolean
         get() = (isUnbound && vanillaBinging()?.isDown == true) || super.isDown()
 
     override fun setKey(boundKey: InputConstants.Key) {
         super.setKey(boundKey)
-        if (!this.isUnbound && vanillaBinging() != null && this.same(vanillaBinging())) {
+        val vanilla = vanillaBinging()
+        if (!this.isUnbound && vanilla != null && this.same(vanilla)) {
             super.setKey(InputConstants.UNKNOWN)
         }
     }

@@ -1,0 +1,24 @@
+{
+  "fabric:load_conditions": {
+    "condition": "inventorio:global_setting",
+    "setting": "DeepPocketsBookCraft"
+  },
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:shulker_shell",
+    "minecraft:shulker_shell",
+    [
+      "minecraft:book",
+      "minecraft:writable_book"
+    ]
+  ],
+  "result": {
+    "id": "minecraft:enchanted_book",
+    "components": {
+      "minecraft:stored_enchantments": {
+        "inventorio:deep_pockets": 1
+      }
+    }
+  }
+}

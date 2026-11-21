@@ -100,7 +100,7 @@ object GlobalSettings : AbstractSettings() {
 
     fun syncFromServer(newSettingsJson: JsonObject) {
         if (anyChanges(newSettingsJson)) {
-            Minecraft.getInstance()?.setScreen(GlobalSettingsSyncPrompt.get(newSettingsJson))
+            Minecraft.getInstance()?.gui?.setScreen(GlobalSettingsSyncPrompt.get(newSettingsJson))
         }
     }
 }
