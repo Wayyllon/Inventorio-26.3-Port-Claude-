@@ -28,6 +28,7 @@
     "client.InGameHudMixinLP",
     "client.InventoryScreenMixin",
     "client.MinecraftClientMixin",
+    "client.MouseHandlerMixin",
     "client.RecipeBookWidgetMixin",
     "client.accessor.HandledScreenAccessor",
     "client.accessor.MinecraftClientAccessor",

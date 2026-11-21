@@ -16,17 +16,16 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.core.NonNullList;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -42,68 +41,75 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerDu
     @Unique public PlayerInventoryAddon inventorioAddon;
 
     @Inject(method = "<init>", at = @At(value = "RETURN"))
-    private void inventorioCreateAddon(Level world, BlockPos pos, float yaw, GameProfile gameProfile, CallbackInfo ci) {
+    private void inventorioCreateAddon(Level world, GameProfile gameProfile, CallbackInfo ci) {
         Player thisPlayer = (Player) (Object) this;
         inventorioAddon = new PlayerInventoryAddon(thisPlayer);
     }
 
     /**
-     * This injection causes the selected UtilityBelt item to be displayed in
-     * the offhand
+     * This override causes the selected UtilityBelt item to be displayed in
+     * the offhand.
+     * <p>
+     * 26.3: {@code Player} no longer overrides {@code getItemBySlot}/{@code setItemSlot}
+     * (they live in {@link LivingEntity} and delegate to the entity equipment), so instead
+     * of injecting into them, this mixin adds overrides to {@code Player}. The equipment
+     * itself is left untouched so that inventory slot 40 keeps referring to the (unused)
+     * vanilla offhand slot, like in previous versions.
      */
-    @Inject(method = "getItemBySlot", at = @At(value = "HEAD"), cancellable = true)
-    private void inventorioDisplayOffhand(EquipmentSlot slot, CallbackInfoReturnable<ItemStack> cir) {
-        if (slot == EquipmentSlot.OFFHAND) cir.setReturnValue(inventorioAddon.getDisplayedOffHandStack());
+    @Override
+    public ItemStack getItemBySlot(EquipmentSlot slot) {
+        if (slot == EquipmentSlot.OFFHAND && inventorioAddon != null) return inventorioAddon.getDisplayedOffHandStack();
+        return super.getItemBySlot(slot);
     }
 
     /**
-     * These 2 mixins govern the custom behavior of displaying items in both
+     * This override governs the custom behavior of displaying items in both
      * hands. First, the offhand is attached to the utility belt, rather than a
      * vanilla slot. Second, a player can swap the main hand and the offhand.
+     * It also refreshes the available slots when we equip armor through
+     * right-clicking or a dispenser.
      */
-    @SuppressWarnings("unchecked")
-    @WrapOperation(
-        method = "setItemSlot",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/core/NonNullList;set(ILjava/lang/Object;)Ljava/lang/Object;",
-            ordinal = 0
-        )
-    )
-    private <E> E inventorioEquipMainHand(NonNullList<E> instance, int index, E element, Operation<E> original) {
-        if (inventorioAddon.getSwappedHands()) {
-            inventorioAddon.setSelectedUtilityStack((ItemStack) element);
-            // TODO: should this return something else?
-            return (E) ItemStack.EMPTY;
+    @Override
+    public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
+        if (inventorioAddon == null) {
+            super.setItemSlot(slot, stack);
+            return;
         }
-        return original.call(instance, index, element);
-    }
+        if (slot == EquipmentSlot.MAINHAND && inventorioAddon.getSwappedHands()) {
+            inventorioAddon.setSelectedUtilityStack(stack);
+            // TODO: should this pass something else as the previous stack?
+            this.onEquipItem(slot, ItemStack.EMPTY, stack);
+        } else if (slot == EquipmentSlot.OFFHAND) {
+            if (inventorioAddon.getSwappedHands()) inventorioAddon.setSelectedHotbarStack(stack);
+            else inventorioAddon.setSelectedUtilityStack(stack);
+            // TODO: should this pass something else as the previous stack?
+            this.onEquipItem(slot, ItemStack.EMPTY, stack);
+        } else {
+            super.setItemSlot(slot, stack);
+        }
 
-    @SuppressWarnings("unchecked")
-    @Redirect(
-        method = "setItemSlot",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/core/NonNullList;set(ILjava/lang/Object;)Ljava/lang/Object;",
-            ordinal = 1
-        )
-    )
-    private <E> E inventorioEquipOffhand(NonNullList<E> defaultedList, int index, E stack) {
-        ItemStack itemStack = (ItemStack) stack;
-        if (inventorioAddon.getSwappedHands()) inventorioAddon.setSelectedHotbarStack(itemStack);
-        else inventorioAddon.setSelectedUtilityStack(itemStack);
-        // TODO: should this return something else?
-        return (E) ItemStack.EMPTY;
+        if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) MixinHelpers
+            .withScreenHandler((Player) (Object) this, InventorioScreenHandler::updateDeepPocketsCapacity);
     }
 
     /**
-     * This mixin refreshes the available slots when we equip armor through
-     * right-clicking or a dispenser
+     * This makes block breaking speed use the most preferred tool from the
+     * tool belt.
+     * <p>
+     * 26.3: {@code Inventory.getDestroySpeed} was removed and inlined into
+     * {@code Player.getDestroySpeed}, so this replaces the selected item's
+     * destroy speed there (moved here from {@link PlayerInventoryMixin}).
      */
-    @Inject(method = "setItemSlot", at = @At(value = "RETURN"))
-    private void inventorioOnEquipArmor(EquipmentSlot slot, ItemStack stack, CallbackInfo ci) {
-        if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) MixinHelpers
-            .withScreenHandler((Player) (Object) this, InventorioScreenHandler::updateDeepPocketsCapacity);
+    @WrapOperation(
+        method = "getDestroySpeed",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/item/ItemStack;getDestroySpeed(Lnet/minecraft/world/level/block/state/BlockState;)F"
+        )
+    )
+    private float inventorioGetBlockBreakingSpeed(ItemStack instance, BlockState state, Operation<Float> original) {
+        if (inventorioAddon != null) return inventorioAddon.getMiningSpeedMultiplier(state);
+        return original.call(instance, state);
     }
 
     /**
@@ -134,16 +140,13 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerDu
      * These 2 injections read and write additional data into Player's NBT
      */
     @Inject(method = "readAdditionalSaveData", at = @At(value = "RETURN"))
-    private void inventorioDeserializePlayerAddon(CompoundTag tag, CallbackInfo ci) {
-        PlayerAddonSerializer.INSTANCE
-            .deserialize(this.registryAccess(), inventorioAddon, tag.getCompound("Inventorio"));
+    private void inventorioDeserializePlayerAddon(ValueInput input, CallbackInfo ci) {
+        PlayerAddonSerializer.INSTANCE.deserialize(inventorioAddon, input.childOrEmpty("Inventorio"));
     }
 
     @Inject(method = "addAdditionalSaveData", at = @At(value = "RETURN"))
-    private void inventorioSerializePlayerAddon(CompoundTag tag, CallbackInfo ci) {
-        CompoundTag inventorioTag = new CompoundTag();
-        PlayerAddonSerializer.INSTANCE.serialize(this.registryAccess(), inventorioAddon, inventorioTag);
-        tag.put("Inventorio", inventorioTag);
+    private void inventorioSerializePlayerAddon(ValueOutput output, CallbackInfo ci) {
+        PlayerAddonSerializer.INSTANCE.serialize(inventorioAddon, output.child("Inventorio"));
     }
 
     @Inject(method = "aiStep", at = @At(value = "RETURN"))

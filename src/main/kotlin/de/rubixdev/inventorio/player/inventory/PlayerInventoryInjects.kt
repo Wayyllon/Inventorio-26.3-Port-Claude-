@@ -48,7 +48,7 @@ abstract class PlayerInventoryInjects protected constructor(player: Player) : Pl
         }
         // Skip items which can go into hotbar (and allow vanilla to handle it)
         for (i in INVENTORY_HOTBAR_RANGE) {
-            val hotbarStack = player.inventory.main[i]
+            val hotbarStack = player.inventory.nonEquipmentItems[i]
             if (areItemsSimilar(sourceStack, hotbarStack) && hotbarStack.count < hotbarStack.maxStackSize) {
                 return false
             }

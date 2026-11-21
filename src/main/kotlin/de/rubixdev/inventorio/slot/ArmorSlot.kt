@@ -1,6 +1,5 @@
 package de.rubixdev.inventorio.slot
 
-import com.mojang.datafixers.util.Pair
 import net.minecraft.world.item.enchantment.EnchantmentHelper
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.entity.LivingEntity
@@ -21,7 +20,7 @@ class ArmorSlot(
     x: Int,
     y: Int,
 ) : Slot(inventory, index, x, y) {
-    override fun setByPlayer(stack: ItemStack?, previousStack: ItemStack?) {
+    override fun setByPlayer(stack: ItemStack, previousStack: ItemStack) {
         entity.onEquipItem(equipmentSlot, previousStack, stack)
         super.setByPlayer(stack, previousStack)
         // TODO: update deep pockets?
@@ -29,8 +28,9 @@ class ArmorSlot(
 
     override fun getMaxStackSize(): Int = 1
 
+    // 26.3: equipability is decided by the `equippable` component, like the vanilla ArmorSlot
     override fun mayPlace(stack: ItemStack): Boolean =
-        equipmentSlot == entity.getEquipmentSlotForItem(stack)
+        entity.isEquippableInSlot(stack, equipmentSlot)
 
     override fun mayPickup(playerEntity: Player): Boolean {
         val itemStack = this.item
@@ -41,9 +41,8 @@ class ArmorSlot(
             ) && super.mayPickup(playerEntity)
     }
 
-    override fun getNoItemIcon(): Pair<Identifier, Identifier>? {
-        return Pair.of(InventoryMenu.BLOCK_ATLAS, EMPTY_ARMOR_SLOT_TEXTURES[equipmentSlot])
-    }
+    // 26.3: slot icons are GUI sprites, no atlas needed
+    override fun getNoItemIcon(): Identifier? = EMPTY_ARMOR_SLOT_TEXTURES[equipmentSlot]
 
     companion object {
         private val EMPTY_ARMOR_SLOT_TEXTURES = mapOf(

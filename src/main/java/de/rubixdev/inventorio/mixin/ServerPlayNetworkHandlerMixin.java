@@ -25,13 +25,13 @@ public class ServerPlayNetworkHandlerMixin {
      */
     @Inject(method = "handleUseItemOn", at = @At(value = "HEAD"))
     private void inventorioRemoveDisplayHand(ServerboundUseItemOnPacket packet, CallbackInfo ci) {
-        if (packet.getHand() == InteractionHand.MAIN_HAND)
+        if (packet.hand() == InteractionHand.MAIN_HAND)
             MixinHelpers.withInventoryAddon(player, addon -> addon.setDisplayTool(ItemStack.EMPTY));
     }
 
     @Inject(method = "handleUseItem", at = @At(value = "HEAD"))
     private void inventorioRemoveDisplayHand(ServerboundUseItemPacket packet, CallbackInfo ci) {
-        if (packet.getHand() == InteractionHand.MAIN_HAND)
+        if (packet.hand() == InteractionHand.MAIN_HAND)
             MixinHelpers.withInventoryAddon(player, addon -> addon.setDisplayTool(ItemStack.EMPTY));
     }
 }

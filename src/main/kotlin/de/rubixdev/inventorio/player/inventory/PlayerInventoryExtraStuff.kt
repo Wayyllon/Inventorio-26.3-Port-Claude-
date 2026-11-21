@@ -16,11 +16,22 @@ import net.minecraft.world.entity.projectile.FireworkRocketEntity
 import net.minecraft.world.item.FireworkRocketItem
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
-import net.minecraft.world.item.TieredItem
 
 import de.rubixdev.inventorio.util.getEnchantment
 
 abstract class PlayerInventoryExtraStuff protected constructor(player: Player) : PlayerInventoryHandFeatures(player) {
+    /**
+     * 26.3: `LivingEntity.swinging` is no longer a writable field. Previously [prePlayerAttack] set it to make the
+     * next tick keep the display tool visible; this flag replaces that.
+     */
+    @JvmField protected var swingRequested = false
+
+    /**
+     * 26.3: `TieredItem` was removed; tools and weapons are items with the `tool`/`weapon` components.
+     */
+    private fun isToolOrWeapon(stack: ItemStack): Boolean =
+        stack.has(DataComponents.TOOL) || stack.has(DataComponents.WEAPON)
+
     /**
      * Returns the block breaking speed based on the return of [getMostPreferredTool]
      */
@@ -32,18 +43,18 @@ abstract class PlayerInventoryExtraStuff protected constructor(player: Player) :
         ) {
             displayTool = tool
         }
-        return max(1f, tool.getMiningSpeedMultiplier(block))
+        return max(1f, tool.getDestroySpeed(block))
     }
 
     private fun getMostPreferredTool(block: BlockState): ItemStack {
         // TODO: some mods will disagree with justifying the most preferred tool by just speed
         // If a player tries to dig with a selected tool, respect that tool and don't change anything
-        if (getActualMainHandItem().item is TieredItem || findFittingToolBeltIndex(getActualMainHandItem()) != -1) {
+        if (isToolOrWeapon(getActualMainHandItem()) || findFittingToolBeltIndex(getActualMainHandItem()) != -1) {
             return getActualMainHandItem()
         }
         // Try to find the fastest tool on the tool belt to mine this block
-        val result = toolBelt.maxByOrNull { it.getMiningSpeedMultiplier(block) } ?: ItemStack.EMPTY
-        if (result.getMiningSpeedMultiplier(block) > 1.0f) {
+        val result = toolBelt.maxByOrNull { it.getDestroySpeed(block) } ?: ItemStack.EMPTY
+        if (result.getDestroySpeed(block) > 1.0f) {
             return result
         }
         val isGlass = block.block is StainedGlassBlock || block.`is`(Blocks.GLASS)
@@ -56,7 +67,7 @@ abstract class PlayerInventoryExtraStuff protected constructor(player: Player) :
 
     private fun playerAttackConditions(): Boolean {
         // if a player tries to attack with a tool, respect that tool and don't change anything
-        if (getActualMainHandItem().item is TieredItem || findFittingToolBeltIndex(getActualMainHandItem()) != -1) {
+        if (isToolOrWeapon(getActualMainHandItem()) || findFittingToolBeltIndex(getActualMainHandItem()) != -1) {
             return false
         }
         // if the attack is done through a Pickarang (from Quark), do nothing
@@ -69,7 +80,7 @@ abstract class PlayerInventoryExtraStuff protected constructor(player: Player) :
     fun prePlayerAttack() {
         if (!playerAttackConditions()) return
         // Or else set a sword/trident as a weapon of choice, or an axe if a sword slot is empty
-        player.swinging = true
+        swingRequested = true
         val swordStack = findFittingToolBeltStack(ItemStack(Items.DIAMOND_SWORD))
         displayTool = if (!swordStack.isEmpty) {
             swordStack
@@ -96,7 +107,7 @@ abstract class PlayerInventoryExtraStuff protected constructor(player: Player) :
         if (!player.isFallFlying) {
             return
         }
-        for (itemStack in player.inventory.main)
+        for (itemStack in player.inventory.nonEquipmentItems)
             if (tryFireRocket(itemStack)) {
                 return
             }
@@ -109,17 +120,17 @@ abstract class PlayerInventoryExtraStuff protected constructor(player: Player) :
     private fun tryFireRocket(itemStack: ItemStack): Boolean {
         if (itemStack.item is FireworkRocketItem && itemStack.components.get(DataComponents.FIREWORKS)?.explosions?.isEmpty() != false) {
             val copyStack = itemStack.copy()
-            if (!player.abilities.creativeMode) {
+            if (!player.abilities.instabuild) {
                 itemStack.shrink(1)
             }
             // If this is the client side, request a server to actually fire a rocket.
-            if (player.level().isClientSide) {
+            if (player.level().isClientSide()) {
                 displayTool = itemStack
                 InventorioNetworking.INSTANCE.c2sUseBoostRocket()
-                (Minecraft.getInstance() as MinecraftClientAccessor).rightClickDelay = 4
+                (Minecraft.getInstance() as MinecraftClientAccessor).itemUseCooldown = 4
             } else {
                 // If this is a server, spawn a firework entity
-                player.level().spawnEntity(FireworkRocketEntity(player.level(), copyStack, player))
+                player.level().addFreshEntity(FireworkRocketEntity(player.level(), copyStack, player))
             }
             return true
         }

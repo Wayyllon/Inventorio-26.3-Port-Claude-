@@ -11,7 +11,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
@@ -24,13 +23,14 @@ public abstract class PlayerEntityMixin extends LivingEntity {
 
     /**
      * This fixes a bug that an Infinity Bow requires an arrow to shoot.
+     * (26.3: the creative check is now {@code hasInfiniteMaterials()} instead of
+     * {@code abilities.instabuild})
      */
     @ModifyExpressionValue(
         method = "getProjectile",
         at = @At(
-            value = "FIELD",
-            target = "Lnet/minecraft/world/entity/player/Abilities;instabuild:Z",
-            opcode = Opcodes.GETFIELD
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/entity/player/Player;hasInfiniteMaterials()Z"
         )
     )
     private boolean inventorioFixInfinityBow(boolean original, ItemStack bow) {

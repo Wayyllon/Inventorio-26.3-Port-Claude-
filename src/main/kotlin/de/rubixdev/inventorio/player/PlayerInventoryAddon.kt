@@ -15,7 +15,8 @@ import net.fabricmc.api.Environment
 import net.minecraft.client.Minecraft
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
-import net.minecraft.world.item.ComplexItem
+import net.minecraft.core.component.DataComponents
+import net.minecraft.world.item.MapItem
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.resources.Identifier
 import net.minecraft.util.Util
@@ -34,7 +35,8 @@ class PlayerInventoryAddon internal constructor(player: Player) : PlayerInventor
 
     fun tick() {
         val ms = Util.getMillis()
-        if (player.swinging) {
+        if (player.isSwinging || swingRequested) {
+            swingRequested = false
             displayToolTimeStamp = ms + 1000
         }
         if (displayToolTimeStamp <= ms || (prevSelectedSlot != -1 && prevSelectedSlot != player.inventory.selectedSlot)) {
@@ -44,7 +46,7 @@ class PlayerInventoryAddon internal constructor(player: Player) : PlayerInventor
 
         stacks.forEach { syncItems(player, it) }
         stacks.filter { it.isNotEmpty }.forEach {
-            it.inventoryTick(player.level(), player, -2, false)
+            it.inventoryTick(player.level(), player, null)
         }
         for (tickHandler in tickHandlers.entries) {
             for ((index, item) in deepPockets.withIndex())
@@ -54,7 +56,7 @@ class PlayerInventoryAddon internal constructor(player: Player) : PlayerInventor
             for ((index, item) in utilityBelt.withIndex())
                 tickMe(tickHandler, this, InventorioAddonSection.UTILITY_BELT, item, index)
         }
-        if (!player.level().isClientSide) {
+        if (!player.level().isClientSide()) {
             sendUpdateS2C()
         }
     }
@@ -73,11 +75,13 @@ class PlayerInventoryAddon internal constructor(player: Player) : PlayerInventor
         }
     }
 
+    // 26.3: ComplexItem was removed; maps are the only items with special update packets
+    // (mirrors the private ServerPlayer.synchronizeSpecialItemUpdates)
     private fun syncItems(player: Player, stack: ItemStack) {
-        if (stack.item.isComplex && player is ServerPlayer) {
-            (stack.item as? ComplexItem)?.getUpdatePacket(stack, player.level(), player)?.let { packet ->
-                player.connection.sendPacket(packet)
-            }
+        if (player !is ServerPlayer) return
+        val mapId = stack.get(DataComponents.MAP_ID) ?: return
+        MapItem.getSavedData(mapId, player.level())?.getUpdatePacket(mapId, player)?.let { packet ->
+            player.connection.send(packet)
         }
     }
 

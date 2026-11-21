@@ -33,7 +33,7 @@ abstract class PlayerInventoryExtension protected constructor(val player: Player
     /** Warning! The length of [toolBelt], and thus [stacks], may differ across play sessions depending on the mods installed */
     @JvmField val toolBelt = stacks.subList(INVENTORY_ADDON_TOOL_BELT_INDEX_OFFSET, INVENTORY_ADDON_TOOL_BELT_INDEX_OFFSET + PlayerInventoryAddon.toolBeltTemplates.size)
 
-    private val lastTrackedStacksState = NonNullList.ofSize(stacks.size, ItemStack.EMPTY)
+    private val lastTrackedStacksState = NonNullList.withSize(stacks.size, ItemStack.EMPTY)
 
     var selectedUtility = 0
         set(value) {
@@ -79,7 +79,8 @@ abstract class PlayerInventoryExtension protected constructor(val player: Player
         for ((index, itemStack) in stacks.withIndex()) {
             val shouldDrop = !EnchantmentHelper.has(itemStack, EnchantmentEffectComponents.PREVENT_EQUIPMENT_DROP)
             if (shouldDrop) {
-                player.drop(itemStack, true, false)
+                // 26.3: drop randomly around the player like vanilla Inventory.dropAll
+                player.createItemStackToDrop(itemStack, true, false)?.let { player.level().addFreshEntity(it) }
             }
             stacks[index] = ItemStack.EMPTY
         }
@@ -87,7 +88,7 @@ abstract class PlayerInventoryExtension protected constructor(val player: Player
 
     fun getTotalAmount(sampleStack: ItemStack): Int {
         var count = 0
-        for (i in 0..<player.inventory.size()) {
+        for (i in 0..<player.inventory.containerSize) {
             val stack = player.inventory.getItem(i)
             if (areItemsSimilar(stack, sampleStack)) {
                 count += stack.count
